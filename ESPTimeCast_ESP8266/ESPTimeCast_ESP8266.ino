@@ -1614,7 +1614,7 @@ void loop() {
     if (hour12 == 0) hour12 = 12;
     sprintf(timeStr, " %d:%02d", hour12, timeinfo.tm_min);
   } else {
-    sprintf(timeStr, " %02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+    sprintf(timeStr, " %02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
   }
 
   char timeSpacedStr[20];
@@ -2245,4 +2245,5 @@ void loop() {
     }
   }
   yield();
+
 }
