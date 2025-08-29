@@ -1604,32 +1604,45 @@ void loop() {
     weatherFetchInitiated = false;
     shouldFetchWeatherNow = false;
   }
-
   const char *const *daysOfTheWeek = getDaysOfWeek(language);
   const char *daySymbol = daysOfTheWeek[timeinfo.tm_wday];
 
-  char timeStr[9];
+  // build base HH:MM first ---
+  char baseTime[9];
   if (twelveHourToggle) {
     int hour12 = timeinfo.tm_hour % 12;
     if (hour12 == 0) hour12 = 12;
-    sprintf(timeStr, " %d:%02d", hour12, timeinfo.tm_min);
+    sprintf(baseTime, "%d:%02d", hour12, timeinfo.tm_min);
   } else {
-    sprintf(timeStr, " %02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+    sprintf(baseTime, "%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
   }
 
-  char timeSpacedStr[20];
+  // add seconds only if colon blink enabled AND weekday hidden ---
+  char timeWithSeconds[12];
+  if (!showDayOfWeek && colonBlinkEnabled) {
+    // Remove any leading space from baseTime
+    const char *trimmedBase = baseTime;
+    if (baseTime[0] == ' ') trimmedBase++;  // skip leading space
+    sprintf(timeWithSeconds, "%s:%02d", trimmedBase, timeinfo.tm_sec);
+  } else {
+    strcpy(timeWithSeconds, baseTime);  // no seconds
+  }
+
+  // keep spacing logic the same ---
+  char timeSpacedStr[24];
   int j = 0;
-  for (int i = 0; timeStr[i] != '\0'; i++) {
-    timeSpacedStr[j++] = timeStr[i];
-    if (timeStr[i + 1] != '\0') {
+  for (int i = 0; timeWithSeconds[i] != '\0'; i++) {
+    timeSpacedStr[j++] = timeWithSeconds[i];
+    if (timeWithSeconds[i + 1] != '\0') {
       timeSpacedStr[j++] = ' ';
     }
   }
   timeSpacedStr[j] = '\0';
 
+  // build final string ---
   String formattedTime;
   if (showDayOfWeek) {
-    formattedTime = String(daySymbol) + " " + String(timeSpacedStr);
+    formattedTime = String(daySymbol) + "   " + String(timeSpacedStr);
   } else {
     formattedTime = String(timeSpacedStr);
   }
@@ -1646,8 +1659,6 @@ void loop() {
   if ((displayMode == 0 || displayMode == 1) && (millis() - lastSwitch > currentDisplayDuration)) {
     advanceDisplayMode();
   }
-
-
 
   // --- CLOCK Display Mode ---
   if (displayMode == 0) {
@@ -1696,7 +1707,9 @@ void loop() {
     } else {
       // NTP and weather are OK — show time
       String timeString = formattedTime;
-      if (colonBlinkEnabled && !colonVisible) {
+
+      // --- MOD: colon blinks only when weekday is shown ---
+      if (showDayOfWeek && colonBlinkEnabled && !colonVisible) {
         timeString.replace(":", " ");
       }
       P.print(timeString);
