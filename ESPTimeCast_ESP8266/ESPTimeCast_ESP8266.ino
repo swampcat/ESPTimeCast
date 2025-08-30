@@ -53,6 +53,7 @@ bool showDayOfWeek = true;
 bool showDate = false;
 bool showHumidity = false;
 bool colonBlinkEnabled = true;
+bool showSeconds = true;
 char ntpServer1[64] = "pool.ntp.org";
 char ntpServer2[256] = "time.nist.gov";
 
@@ -1608,13 +1609,27 @@ void loop() {
   const char *const *daysOfTheWeek = getDaysOfWeek(language);
   const char *daySymbol = daysOfTheWeek[timeinfo.tm_wday];
 
-  char timeStr[9];
+  char timeStr[12];
+  strftime(timeStr, 12, twelveHourToggle ? "%I:%M" : "%H:%M", &timeinfo);
+  /*
   if (twelveHourToggle) {
     int hour12 = timeinfo.tm_hour % 12;
     if (hour12 == 0) hour12 = 12;
     sprintf(timeStr, " %d:%02d", hour12, timeinfo.tm_min);
   } else {
-    sprintf(timeStr, " %02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    sprintf(timeStr, " %02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+  }
+*/
+
+  if (showSeconds) {
+    sprintf(timeStr, "%s:%02d", timeStr, timeinfo.tm_sec);
+  }
+
+// Not enough room to show seconds and the AM/PM indicator without scrolling
+  if (twelveHourToggle && !showSeconds) {
+    char meridianStr[3];
+    strftime(meridianStr, 3, "%p", &timeinfo);
+    sprintf(timeStr, "%s %s", timeStr, meridianStr);
   }
 
   char timeSpacedStr[20];
