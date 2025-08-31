@@ -1667,65 +1667,89 @@ void loop() {
   }
 
 
+  // Persistent variables (declare near top of file or loop)
+  static int prevDisplayMode = -1;
+  static bool clockScrollDone = false;
 
   // --- CLOCK Display Mode ---
   if (displayMode == 0) {
     P.setCharSpacing(0);
 
+    // --- NTP SYNC ---
     if (ntpState == NTP_SYNCING) {
       if (ntpSyncSuccessful || ntpRetryCount >= maxNtpRetries || millis() - ntpStartTime > ntpTimeout) {
-        // Avoid being stuck here if something went wrong in state management
         ntpState = NTP_FAILED;
-      } else {
-        if (millis() - ntpAnimTimer > 750) {
-          ntpAnimTimer = millis();
-          switch (ntpAnimFrame % 3) {
-            case 0: P.print(F("S Y N C ®")); break;
-            case 1: P.print(F("S Y N C ¯")); break;
-            case 2: P.print(F("S Y N C °")); break;
-          }
-          ntpAnimFrame++;
+      } else if (millis() - ntpAnimTimer > 750) {
+        ntpAnimTimer = millis();
+        switch (ntpAnimFrame % 3) {
+          case 0: P.print(F("S Y N C ®")); break;
+          case 1: P.print(F("S Y N C ¯")); break;
+          case 2: P.print(F("S Y N C °")); break;
         }
+        ntpAnimFrame++;
       }
-    } else if (!ntpSyncSuccessful) {
+    }
+    // --- NTP / WEATHER ERROR ---
+    else if (!ntpSyncSuccessful) {
       P.setTextAlignment(PA_CENTER);
-
       static unsigned long errorAltTimer = 0;
       static bool showNtpError = true;
 
-      // Toggle every 2 seconds if both are unavailable
       if (!ntpSyncSuccessful && !weatherAvailable) {
         if (millis() - errorAltTimer > 2000) {
           errorAltTimer = millis();
           showNtpError = !showNtpError;
         }
-
-        if (showNtpError) {
-          P.print(F("?/"));  // NTP error glyph
-        } else {
-          P.print(F("?*"));  // Weather error glyph
-        }
-
+        P.print(showNtpError ? F("?/") : F("?*"));
       } else if (!ntpSyncSuccessful) {
-        P.print(F("?/"));  // NTP only
+        P.print(F("?/"));
       } else if (!weatherAvailable) {
-        P.print(F("?*"));  // Weather only
+        P.print(F("?*"));
       }
-
-    } else {
-      // NTP and weather are OK — show time
+    }
+    // --- DISPLAY CLOCK ---
+    else {
       String timeString = formattedTime;
-
-      // --- MOD: colon blinks only when weekday is shown ---
       if (showDayOfWeek && colonBlinkEnabled && !colonVisible) {
         timeString.replace(":", " ");
       }
-      P.print(timeString);
+
+      // --- SCROLL IN ONLY WHEN COMING FROM SPECIFIC MODES OR FIRST BOOT ---
+      bool shouldScrollIn = false;
+      if (prevDisplayMode == -1 || prevDisplayMode == 3 || prevDisplayMode == 4) {
+        shouldScrollIn = true;  // first boot or other special modes
+      } else if (prevDisplayMode == 2 && weatherDescription.length() > 8) {
+        shouldScrollIn = true;  // only scroll in if weather was scrolling
+      }
+
+      if (shouldScrollIn && !clockScrollDone) {
+        textEffect_t inDir = getEffectiveScrollDirection(PA_SCROLL_LEFT, flipDisplay);
+
+        P.displayText(
+          timeString.c_str(),
+          PA_CENTER,
+          GENERAL_SCROLL_SPEED,
+          0,
+          inDir,
+          PA_NO_EFFECT);
+        while (!P.displayAnimate()) yield();
+        clockScrollDone = true;  // mark scroll done
+      } else {
+        P.setTextAlignment(PA_CENTER);
+        P.print(timeString);
+      }
     }
 
     yield();
-    return;
+  } else {
+    // --- leaving clock mode ---
+    if (prevDisplayMode == 0) {
+      clockScrollDone = false;  // reset for next time we enter clock
+    }
   }
+
+  // --- update prevDisplayMode ---
+  prevDisplayMode = displayMode;
 
 
 
@@ -1776,7 +1800,6 @@ void loop() {
 
     if (desc.length() > 8) {
       if (!descScrolling) {
-        P.displayClear();
         textEffect_t actualScrollDirection = getEffectiveScrollDirection(PA_SCROLL_LEFT, flipDisplay);
         P.displayScroll(descBuffer, PA_CENTER, actualScrollDirection, GENERAL_SCROLL_SPEED);
         descScrolling = true;
@@ -2077,7 +2100,6 @@ void loop() {
         String fullString = String(buf);
 
         // Display the full string and scroll it
-        P.displayClear();
         P.setTextAlignment(PA_LEFT);
         P.setCharSpacing(1);
         textEffect_t actualScrollDirection = getEffectiveScrollDirection(PA_SCROLL_LEFT, flipDisplay);
