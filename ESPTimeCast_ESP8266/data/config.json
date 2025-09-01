@@ -30,5 +30,7 @@
     "targetTimestamp": 0,
     "label": "",
     "isDramaticCountdown": true
-  }
+  },
+  "showWeather": true,
+  "showTime": true
 }

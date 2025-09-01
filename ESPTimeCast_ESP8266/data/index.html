@@ -494,6 +494,14 @@ textarea::placeholder {
       <div class="toggles" style="padding: 0 1rem;">
 
         <label style="display: flex; align-items: center; margin-top: 1.75rem; justify-content: space-between;">
+          <span style="margin-right: 0.5em;">Show Time:</span>
+          <span class="toggle-switch">
+            <input type="checkbox" id="showTime" name="showTime" onchange="setShowTime(this.checked)">
+            <span class="toggle-slider"></span>
+          </span>
+        </label>
+
+        <label style="display: flex; align-items: center; margin-top: 1.75rem; justify-content: space-between;">
           <span style="margin-right: 0.5em;">Show Day of Week:</span>
           <span class="toggle-switch">
             <input type="checkbox" id="showDayOfWeek" name="showDayOfWeek" onchange="setShowDayOfWeek(this.checked)">
@@ -521,6 +529,14 @@ textarea::placeholder {
           <span style="margin-right: 0.5em;">Display 12-hour Clock:</span>
           <span class="toggle-switch">
             <input type="checkbox" id="twelveHourToggle" name="twelveHourToggle" onchange="setTwelveHour(this.checked)">
+            <span class="toggle-slider"></span>
+          </span>
+        </label>
+
+        <label style="display: flex; align-items: center; margin-top: 1.75rem; justify-content: space-between;">
+          <span style="margin-right: 0.5em;">Show Weather:</span>
+          <span class="toggle-switch">
+            <input type="checkbox" id="showWeather" name="showWeather" onchange="setShowWeather(this.checked)">
             <span class="toggle-slider"></span>
           </span>
         </label>
@@ -689,6 +705,9 @@ window.onload = function () {
       document.getElementById('showHumidity').checked = !!data.showHumidity;
       document.getElementById('colonBlinkEnabled').checked = !!data.colonBlinkEnabled;
       document.getElementById('showWeatherDescription').checked = !!data.showWeatherDescription;
+      document.getElementById('showWeather').checked = !!data.showWeather;
+      document.getElementById('showTime').checked = !!data.showTime;
+
       // Dimming controls
 const dimmingEnabledEl = document.getElementById('dimmingEnabled');
 const isDimming = (data.dimmingEnabled === true || data.dimmingEnabled === "true" || data.dimmingEnabled === 1);
@@ -1112,6 +1131,24 @@ function setBrightnessLive(val) {
     .then(res => res.json())
     .catch(e => {}); // Optionally handle errors
   }, 150); // 150ms debounce, adjust as needed
+}
+
+// Set option to show the time displays
+function setShowTime(val) {
+  fetch('/set_showtime', {
+    method: 'POST',
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "value=" + (val ? 1 : 0)
+  });
+}
+
+// Set option to show the weather displays
+function setShowWeather(val) {
+  fetch('/set_showweather', {
+    method: 'POST',
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "value=" + (val ? 1 : 0)
+  });
 }
 
 function setFlipDisplay(val) {
