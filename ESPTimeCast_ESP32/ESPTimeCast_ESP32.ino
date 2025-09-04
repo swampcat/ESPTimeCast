@@ -438,10 +438,10 @@ void setupTime() {
     ntpRetryCount = 0;
     ntpSyncSuccessful = false;
   } else {
-    Serial.println(F("[TIME] NTP server lookup failed — skipping sync"));
+    Serial.println(F("[TIME] NTP server lookup failed — retry sync in 30 seconds"));
     ntpSyncSuccessful = false;
-    ntpState = NTP_IDLE;  // or custom NTP_ERROR state
-    // Trigger your error display here if desired
+    ntpState = NTP_SYNCING;   // instead of NTP_IDLE
+    ntpStartTime = millis();  // start the failed timer (so retry delay counts from now)
   }
 }
 
@@ -1572,9 +1572,29 @@ void loop() {
       ntpAnimTimer = 0;
       ntpAnimFrame = 0;
       break;
+
     case NTP_FAILED:
       ntpAnimTimer = 0;
       ntpAnimFrame = 0;
+
+      static unsigned long lastNtpRetryAttempt = 0;
+      static bool firstRetry = true;
+
+      if (lastNtpRetryAttempt == 0) {
+        lastNtpRetryAttempt = millis();  // set baseline on first fail
+      }
+
+      unsigned long ntpRetryInterval = firstRetry ? 30000UL : 300000UL; // first retry after 30s, after that every 5 minutes
+
+      if (millis() - lastNtpRetryAttempt > ntpRetryInterval) {
+        lastNtpRetryAttempt = millis();
+        ntpRetryCount = 0;
+        ntpStartTime = millis();
+        ntpState = NTP_SYNCING;
+        Serial.println(F("[TIME] Retrying NTP sync..."));
+
+        firstRetry = false;
+      }
       break;
   }
 
