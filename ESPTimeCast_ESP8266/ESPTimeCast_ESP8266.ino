@@ -1295,6 +1295,13 @@ DisplayMode key:
   4: Nightscout
 */
 
+#define DISPLAYMODE_CLOCK               0
+#define DISPLAYMODE_WEATHER             1
+#define DISPLAYMODE_WEATHER_DESCRIPTION 2
+#define DISPLAYMODE_COUNTDOWN           3
+#define DISPLAYMODE_NIGHTSCOUT          4
+#define DISPLAYMODE_DATE                5
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
