@@ -381,7 +381,10 @@ void connectWiFi() {
                                                                    : "UNKNOWN");
 
       // --- IP Display initiation ---
-      pendingIpToShow = WiFi.localIP().toString() + " " + hostname;
+      String hostnameUpperCase;
+      hostnameUpperCase = hostname;
+      hostnameUpperCase.toUpperCase();
+      pendingIpToShow = WiFi.localIP().toString() + " " + hostnameUpperCase;
       showingIp = true;
       ipDisplayCount = 0;  // Reset count for IP display
       P.displayClear();
