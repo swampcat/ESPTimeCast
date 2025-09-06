@@ -34,6 +34,7 @@ const int IP_SCROLL_SPEED = 115;      // Default: Adjust this for the IP Address
 // WiFi and configuration globals
 char ssid[32] = "";
 char password[32] = "";
+String hostname = "Clock_";
 char openWeatherApiKey[64] = "";
 char openWeatherCity[64] = "";
 char openWeatherCountry[64] = "";
@@ -303,6 +304,21 @@ const char *AP_SSID = "ESPTimeCast";
 
 void connectWiFi() {
   Serial.println(F("[WIFI] Connecting to WiFi..."));
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  
+  // Extract last 2 bytes (4 hex digits) and format as hex
+  // Format with zero-padding to ensure 4 hex digits
+  if (mac[4] < 0x10) hostname += "0";
+  hostname += String(mac[4], HEX);
+  if (mac[5] < 0x10) hostname += "0";
+  hostname += String(mac[5], HEX);
+ 
+  // Set the hostname
+  WiFi.hostname(hostname);
+  
+  Serial.print(F("[WIFI] Hostname set to: "));
+  Serial.println(hostname);
 
   bool credentialsExist = (strlen(ssid) > 0);
 
@@ -365,7 +381,7 @@ void connectWiFi() {
                                                                    : "UNKNOWN");
 
       // --- IP Display initiation ---
-      pendingIpToShow = WiFi.localIP().toString();
+      pendingIpToShow = WiFi.localIP().toString() + " " + hostname;
       showingIp = true;
       ipDisplayCount = 0;  // Reset count for IP display
       P.displayClear();
