@@ -326,6 +326,10 @@ void connectWiFi() {
     Serial.println(WiFi.softAPIP());
     isAPMode = true;
 
+    clearWiFiCredentialsInConfig();
+    strlcpy(ssid, "", sizeof(ssid));
+    strlcpy(password, "", sizeof(password));
+
     WiFiMode_t mode = WiFi.getMode();
     Serial.printf("[WIFI] WiFi mode after setting AP: %s\n",
                   mode == WIFI_OFF ? "OFF" : mode == WIFI_STA    ? "STA ONLY"
@@ -384,6 +388,10 @@ void connectWiFi() {
       dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
       isAPMode = true;
 
+      clearWiFiCredentialsInConfig();
+      strlcpy(ssid, "", sizeof(ssid));
+      strlcpy(password, "", sizeof(password));
+
       auto mode = WiFi.getMode();
       Serial.printf("[WIFI] WiFi mode after STA failure and setting AP: %s\n",
                     mode == WIFI_OFF ? "OFF" : mode == WIFI_STA    ? "STA ONLY"
@@ -407,6 +415,39 @@ void connectWiFi() {
     }
     delay(1);
   }
+}
+
+void clearWiFiCredentialsInConfig() {
+  DynamicJsonDocument doc(2048);
+
+  // Open existing config, if present
+  File configFile = LittleFS.open("/config.json", "r");
+  if (configFile) {
+    DeserializationError err = deserializeJson(doc, configFile);
+    configFile.close();
+    if (err) {
+      Serial.print(F("[SECURITY] Error parsing config.json: "));
+      Serial.println(err.f_str());
+      return;
+    }
+  }
+
+  doc["ssid"] = "";
+  doc["password"] = "";
+
+  // Optionally backup previous config
+  if (LittleFS.exists("/config.json")) {
+    LittleFS.rename("/config.json", "/config.bak");
+  }
+
+  File f = LittleFS.open("/config.json", "w");
+  if (!f) {
+    Serial.println(F("[SECURITY] ERROR: Cannot write to /config.json to clear credentials!"));
+    return;
+  }
+  serializeJson(doc, f);
+  f.close();
+  Serial.println(F("[SECURITY] Cleared WiFi credentials in config.json."));
 }
 
 // -----------------------------------------------------------------------------
