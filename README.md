@@ -9,7 +9,7 @@ It displays the current time, day of the week, and local weather (temp/humidity/
 Setup and configuration are fully managed via a built-in web interface.  
 
 
-<video src="https://github.com/user-attachments/assets/a6be449c-aaee-4a51-9fa3-4c60fe9f5fac"></video>
+<video src="https://github.com/user-attachments/assets/78b6525d-8dcd-43fc-875e-28805e0f4fab"></video>
 
 ## 📦 3D Printable Case
 
@@ -275,6 +275,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
