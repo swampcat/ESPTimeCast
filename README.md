@@ -8,7 +8,8 @@
 It displays the current time, day of the week, and local weather (temp/humidity/weather description) fetched from OpenWeatherMap.  
 Setup and configuration are fully managed via a built-in web interface.  
 
-<video src="assets/video.mp4" controls></video>
+
+<video src="https://github.com/user-attachments/assets/a6be449c-aaee-4a51-9fa3-4c60fe9f5fac"></video>
 
 ## 📦 3D Printable Case
 
@@ -274,6 +275,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
