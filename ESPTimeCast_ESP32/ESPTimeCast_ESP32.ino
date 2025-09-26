@@ -1043,10 +1043,12 @@ String normalizeWeatherDescription(String str) {
   str.replace("д", "d");
   str.replace("ђ", "dj");
   str.replace("е", "e");
+  str.replace("ё", "e");  // Russian
   str.replace("ж", "z");
   str.replace("з", "z");
   str.replace("и", "i");
-  str.replace("ј", "j");
+  str.replace("й", "j");  // Russian
+  str.replace("ј", "j");  // Serbian
   str.replace("к", "k");
   str.replace("л", "l");
   str.replace("љ", "lj");
@@ -1066,6 +1068,11 @@ String normalizeWeatherDescription(String str) {
   str.replace("ч", "c");
   str.replace("џ", "dz");
   str.replace("ш", "s");
+  str.replace("щ", "sh");  // Russian
+  str.replace("ы", "y");   // Russian
+  str.replace("э", "e");   // Russian
+  str.replace("ю", "yu");  // Russian
+  str.replace("я", "ya");  // Russian
 
   // Latin diacritics → ASCII
   str.replace("å", "a");
@@ -1247,13 +1254,12 @@ void fetchWeather() {
   Serial.print(F("[WEATHER] URL: "));  // Use F() with Serial.print
   Serial.println(url);
 
-  HTTPClient http;          // Create an HTTPClient object
   WiFiClientSecure client;  // use secure client for HTTPS
-  client.setInsecure();     // disable certificate validation
-
+  client.stop();            // ensure previous session closed
+  client.setInsecure();     // no cert validation
+  HTTPClient http;          // Create an HTTPClient object
   http.begin(client, url);  // Pass the WiFiClient object and the URL
-
-  http.setTimeout(10000);  // Sets both connection and stream timeout to 10 seconds
+  http.setTimeout(10000);   // Sets both connection and stream timeout to 10 seconds
 
   Serial.println(F("[WEATHER] Sending GET request..."));
   int httpCode = http.GET();  // Send the GET request
@@ -1394,8 +1400,7 @@ void advanceDisplayMode() {
     } else if (weatherAvailable && (strlen(openWeatherApiKey) == 32) && (strlen(openWeatherCity) > 0) && (strlen(openWeatherCountry) > 0)) {
       displayMode = 1;
       Serial.println(F("[DISPLAY] Switching to display mode: WEATHER (from Clock)"));
-    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful &&
-         countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
+    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Clock, weather skipped)"));
     } else if (nightscoutConfigured) {
@@ -1409,8 +1414,7 @@ void advanceDisplayMode() {
     if (weatherAvailable && (strlen(openWeatherApiKey) == 32) && (strlen(openWeatherCity) > 0) && (strlen(openWeatherCountry) > 0)) {
       displayMode = 1;
       Serial.println(F("[DISPLAY] Switching to display mode: WEATHER (from Date)"));
-    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful &&
-         countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
+    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Date, weather skipped)"));
     } else if (nightscoutConfigured) {
@@ -1424,8 +1428,7 @@ void advanceDisplayMode() {
     if (showWeatherDescription && weatherAvailable && weatherDescription.length() > 0) {
       displayMode = 2;
       Serial.println(F("[DISPLAY] Switching to display mode: DESCRIPTION (from Weather)"));
-    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful &&
-         countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
+    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Weather)"));
     } else if (nightscoutConfigured) {
@@ -1436,8 +1439,7 @@ void advanceDisplayMode() {
       Serial.println(F("[DISPLAY] Switching to display mode: CLOCK (from Weather)"));
     }
   } else if (displayMode == 2) {  // Weather Description
-    if (countdownEnabled && !countdownFinished && ntpSyncSuccessful &&
-         countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
+    if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Description)"));
     } else if (nightscoutConfigured) {
@@ -2428,6 +2430,7 @@ void loop() {
         "pl",  // Polish
         "pt",  // Portuguese
         "ro",  // Romanian
+        "ru",  // Russian
         "sk",  // Slovak
         "sl",  // Slovenian
         "sr",  // Serbian

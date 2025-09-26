@@ -29,6 +29,7 @@ const MonthsMapping months_mappings[] = {
     { "pl", { "s&t&y", "l&u&t", "m&a&r", "k&w&i", "m&a&j", "c&z&e", "l&i&p", "s&i&e", "w&r&z", "p&a&z", "l&i&s", "g&r&u" } }, // Polish
     { "pt", { "j&a&n", "f&e&v", "m&a&r", "a&b&r", "m&a&i", "j&u&n", "j&u&l", "a&g&o", "s&e&t", "o&u&t", "n&o&v", "d&e&z" } }, // Portuguese
     { "ro", { "i&a&n", "f&e&b", "m&a&r", "a&p&r", "m&a&i", "i&u&n", "i&u&l", "a&u&g", "s&e&p", "o&c&t", "n&o&v", "d&e&c" } }, // Romanian
+    { "ru", { "i&a&n", "f&e&b", "m&a&r", "a&p&r", "m&a&i", "i&u&n", "i&u&l", "a&u&g", "s&e&p", "o&c&t", "n&o&i", "d&e&c" } }, // Russian
     { "sk", { "j&a&n", "f&e&b", "m&a&r", "a&p&r", "m&a&j", "j&u&n", "j&u&l", "a&u&g", "s&e&p", "o&k&t", "n&o&v", "d&e&c" } }, // Slovak
     { "sl", { "j&a&n", "f&e&b", "m&a&r", "a&p&r", "m&a&j", "j&u&n", "j&u&l", "a&v&g", "s&e&p", "o&k&t", "n&o&v", "d&e&c" } }, // Slovenian
     { "sr", { "j&a&n", "f&e&b", "m&a&r", "a&p&r", "m&a&j", "j&u&n", "j&u&l", "a&v&g", "s&e&p", "o&k&t", "n&o&v", "d&e&c" } }, // Serbian

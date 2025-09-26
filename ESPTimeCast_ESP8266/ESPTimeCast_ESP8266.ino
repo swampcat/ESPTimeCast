@@ -1042,10 +1042,12 @@ String normalizeWeatherDescription(String str) {
   str.replace("д", "d");
   str.replace("ђ", "dj");
   str.replace("е", "e");
+  str.replace("ё", "e");  // Russian
   str.replace("ж", "z");
   str.replace("з", "z");
   str.replace("и", "i");
-  str.replace("ј", "j");
+  str.replace("й", "j");  // Russian
+  str.replace("ј", "j");  // Serbian
   str.replace("к", "k");
   str.replace("л", "l");
   str.replace("љ", "lj");
@@ -1065,6 +1067,11 @@ String normalizeWeatherDescription(String str) {
   str.replace("ч", "c");
   str.replace("џ", "dz");
   str.replace("ш", "s");
+  str.replace("щ", "sh");  // Russian
+  str.replace("ы", "y");   // Russian
+  str.replace("э", "e");   // Russian
+  str.replace("ю", "yu");  // Russian
+  str.replace("я", "ya");  // Russian
 
   // Latin diacritics → ASCII
   str.replace("å", "a");
@@ -1245,12 +1252,12 @@ void fetchWeather() {
   String url = buildWeatherURL();
   Serial.println(F("[WEATHER] URL: ") + url);
 
-  HTTPClient http;          // Create an HTTPClient object
   WiFiClientSecure client;  // use secure client for HTTPS
-  client.setInsecure();     // disable certificate validation
-
+  client.stop();            // ensure previous session closed
+  client.setInsecure();     // no cert validation
+  HTTPClient http;          // Create an HTTPClient object
   http.begin(client, url);  // Pass the WiFiClient object and the URL
-
+  client.setBufferSizes(512, 512);
   http.setTimeout(10000);  // Sets both connection and stream timeout to 10 seconds
 
   Serial.println(F("[WEATHER] Sending GET request..."));
@@ -1774,6 +1781,9 @@ void loop() {
     weatherFetchInitiated = false;
     shouldFetchWeatherNow = false;
   }
+
+
+
   const char *const *daysOfTheWeek = getDaysOfWeek(language);
   const char *daySymbol = daysOfTheWeek[timeinfo.tm_wday];
 
@@ -2409,6 +2419,7 @@ void loop() {
         "pl",  // Polish
         "pt",  // Portuguese
         "ro",  // Romanian
+        "ru",  // Russian
         "sk",  // Slovak
         "sl",  // Slovenian
         "sr",  // Serbian
