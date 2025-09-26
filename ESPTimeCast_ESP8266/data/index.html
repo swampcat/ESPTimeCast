@@ -558,8 +558,8 @@ textarea::placeholder {
         </label>
 
         <label style="margin-top: 1.75rem;">Brightness: <span id="brightnessValue">10</span></label>
-        <input style="width: 100%;" type="range" min="0" max="15" name="brightness" id="brightnessSlider" value="10" 
-        oninput="brightnessValue.textContent = brightnessSlider.value; setBrightnessLive(this.value);">
+        <input style="width: 100%;" type="range" min="-1" max="15" name="brightness" id="brightnessSlider" value="10" 
+        oninput="brightnessValue.textContent = (this.value == -1 ? 'Off' : this.value); setBrightnessLive(this.value);">
         <br><br><br>
 
           <label style="display: flex; align-items: center; justify-content: space-between;">
@@ -583,8 +583,8 @@ textarea::placeholder {
         </div>
 
         <label style="margin-top: 1.75rem;" for="dimBrightness">Dimming Brightness: <span id="dimmingBrightnessValue">2</span></label>
-        <input style="width: 100%;" type="range" min="0" max="15" name="dimming_brightness" id="dimBrightness" value="2"
-        oninput="dimmingBrightnessValue.textContent = dimBrightness.value; ">
+        <input style="width: 100%;" type="range" min="-1" max="15" name="dimming_brightness" id="dimBrightness" value="2"
+        oninput="dimmingBrightnessValue.textContent = (this.value == -1 ? 'off' : this.value);">
         <br><br><br>
         <div class="form-group">
             <label style="display: flex; align-items: center; justify-content: space-between;">
@@ -679,7 +679,7 @@ window.onload = function () {
       document.getElementById('language').value = data.language || '';
       // Advanced:
       document.getElementById('brightnessSlider').value = typeof data.brightness !== "undefined" ? data.brightness : 10;
-      document.getElementById('brightnessValue').textContent = document.getElementById('brightnessSlider').value;
+      document.getElementById('brightnessValue').textContent = (document.getElementById('brightnessSlider').value == -1 ? 'off' : document.getElementById('brightnessSlider').value);
       document.getElementById('flipDisplay').checked = !!data.flipDisplay;
       document.getElementById('ntpServer1').value = data.ntpServer1 || "";
       document.getElementById('ntpServer2').value = data.ntpServer2 || "";
@@ -713,7 +713,7 @@ document.getElementById('dimEndTime').value =
 
       document.getElementById('dimBrightness').value = (data.dimBrightness !== undefined ? data.dimBrightness : 2);
       // Then update the span's text content with that value
-      document.getElementById('dimmingBrightnessValue').textContent = document.getElementById('dimBrightness').value;
+      document.getElementById('dimmingBrightnessValue').textContent = (document.getElementById('dimBrightness').value == -1 ? 'Off' : document.getElementById('dimBrightness').value);
 
       setDimmingFieldsEnabled(!!data.dimmingEnabled);
 

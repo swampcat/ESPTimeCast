@@ -33,7 +33,7 @@ const int IP_SCROLL_SPEED = 115;      // Default: Adjust this for the IP Address
 
 // WiFi and configuration globals
 char ssid[32] = "";
-char password[32] = "";
+char password[64] = "";
 char openWeatherApiKey[64] = "";
 char openWeatherCity[64] = "";
 char openWeatherCountry[64] = "";
@@ -46,6 +46,7 @@ String detailedDesc = "";
 // Timing and display settings
 unsigned long clockDuration = 10000;
 unsigned long weatherDuration = 5000;
+bool displayOff = false;
 int brightness = 7;
 bool flipDisplay = false;
 bool twelveHourToggle = false;
@@ -58,6 +59,8 @@ char ntpServer2[256] = "time.nist.gov";
 
 // Dimming
 bool dimmingEnabled = false;
+bool displayOffByDimming = false;
+bool displayOffByBrightness = false;
 int dimStartHour = 18;  // 6pm default
 int dimStartMinute = 0;
 int dimEndHour = 8;  // 8am default
@@ -330,7 +333,7 @@ void connectWiFi() {
     clearWiFiCredentialsInConfig();
     strlcpy(ssid, "", sizeof(ssid));
     strlcpy(password, "", sizeof(password));
-    
+
     WiFiMode_t mode = WiFi.getMode();
     Serial.printf("[WIFI] WiFi mode after setting AP: %s\n",
                   mode == WIFI_OFF ? "OFF" : mode == WIFI_STA    ? "STA ONLY"
@@ -810,11 +813,36 @@ void setupWebServer() {
       return;
     }
     int newBrightness = request->getParam("value", true)->value().toInt();
+
+    // Handle "off" request
+    if (newBrightness == -1) {
+      P.displayShutdown(true);  // Fully shut down display driver
+      P.displayClear();
+      displayOff = true;
+      Serial.println("[WEBSERVER] Display set to OFF (shutdown mode)");
+      request->send(200, "application/json", "{\"ok\":true, \"display\":\"off\"}");
+      return;
+    }
+
+    // Clamp brightness to valid range
     if (newBrightness < 0) newBrightness = 0;
     if (newBrightness > 15) newBrightness = 15;
-    brightness = newBrightness;
-    P.setIntensity(brightness);
-    Serial.printf("[WEBSERVER] Set brightness to %d\n", brightness);
+
+    // Only run robust clear/reset when coming from "off"
+    if (displayOff) {
+      P.setIntensity(newBrightness);
+      advanceDisplayModeSafe();
+      P.displayShutdown(false);
+      brightness = newBrightness;
+      displayOff = false;
+      Serial.println("[WEBSERVER] Display woke from OFF");
+    } else {
+      // Display already on, just set brightness
+      brightness = newBrightness;
+      P.setIntensity(brightness);
+      Serial.printf("[WEBSERVER] Set brightness to %d\n", brightness);
+    }
+
     request->send(200, "application/json", "{\"ok\":true}");
   });
 
@@ -1163,7 +1191,7 @@ bool isFiveDigitZip(const char *str) {
 // Weather Fetching and API settings
 // -----------------------------------------------------------------------------
 String buildWeatherURL() {
-  String base = "http://api.openweathermap.org/data/2.5/weather?";
+  String base = "https://api.openweathermap.org/data/2.5/weather?";
 
   float lat = atof(openWeatherCity);
   float lon = atof(openWeatherCountry);
@@ -1217,8 +1245,9 @@ void fetchWeather() {
   String url = buildWeatherURL();
   Serial.println(F("[WEATHER] URL: ") + url);
 
-  HTTPClient http;    // Create an HTTPClient object
-  WiFiClient client;  // Create a WiFiClient object
+  HTTPClient http;          // Create an HTTPClient object
+  WiFiClientSecure client;  // use secure client for HTTPS
+  client.setInsecure();     // disable certificate validation
 
   http.begin(client, url);  // Pass the WiFiClient object and the URL
 
@@ -1361,7 +1390,7 @@ void advanceDisplayMode() {
     } else if (weatherAvailable && (strlen(openWeatherApiKey) == 32) && (strlen(openWeatherCity) > 0) && (strlen(openWeatherCountry) > 0)) {
       displayMode = 1;
       Serial.println(F("[DISPLAY] Switching to display mode: WEATHER (from Clock)"));
-    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful) {
+    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Clock, weather skipped)"));
     } else if (nightscoutConfigured) {
@@ -1375,7 +1404,7 @@ void advanceDisplayMode() {
     if (weatherAvailable && (strlen(openWeatherApiKey) == 32) && (strlen(openWeatherCity) > 0) && (strlen(openWeatherCountry) > 0)) {
       displayMode = 1;
       Serial.println(F("[DISPLAY] Switching to display mode: WEATHER (from Date)"));
-    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful) {
+    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Date, weather skipped)"));
     } else if (nightscoutConfigured) {
@@ -1389,7 +1418,7 @@ void advanceDisplayMode() {
     if (showWeatherDescription && weatherAvailable && weatherDescription.length() > 0) {
       displayMode = 2;
       Serial.println(F("[DISPLAY] Switching to display mode: DESCRIPTION (from Weather)"));
-    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful) {
+    } else if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Weather)"));
     } else if (nightscoutConfigured) {
@@ -1400,7 +1429,7 @@ void advanceDisplayMode() {
       Serial.println(F("[DISPLAY] Switching to display mode: CLOCK (from Weather)"));
     }
   } else if (displayMode == 2) {  // Weather Description -> ...
-    if (countdownEnabled && !countdownFinished && ntpSyncSuccessful) {
+    if (countdownEnabled && !countdownFinished && ntpSyncSuccessful && countdownTargetTimestamp > 0 && countdownTargetTimestamp > time(nullptr)) {
       displayMode = 3;
       Serial.println(F("[DISPLAY] Switching to display mode: COUNTDOWN (from Description)"));
     } else if (nightscoutConfigured) {
@@ -1424,6 +1453,40 @@ void advanceDisplayMode() {
   }
 
   // --- Common cleanup/reset logic remains the same ---
+  lastSwitch = millis();
+}
+
+void advanceDisplayModeSafe() {
+  int attempts = 0;
+  const int MAX_ATTEMPTS = 6;  // Number of possible modes + 1
+  int startMode = displayMode;
+  bool valid = false;
+  do {
+    advanceDisplayMode();  // One step advance
+    attempts++;
+    // Recalculate validity for the new mode
+    valid = false;
+    String ntpField = String(ntpServer2);
+    bool nightscoutConfigured = ntpField.startsWith("https://");
+
+    if (displayMode == 0) valid = true;  // Clock always valid
+    else if (displayMode == 5 && showDate) valid = true;
+    else if (displayMode == 1 && weatherAvailable && (strlen(openWeatherApiKey) == 32) && (strlen(openWeatherCity) > 0) && (strlen(openWeatherCountry) > 0)) valid = true;
+    else if (displayMode == 2 && showWeatherDescription && weatherAvailable && weatherDescription.length() > 0) valid = true;
+    else if (displayMode == 3 && countdownEnabled && !countdownFinished && ntpSyncSuccessful) valid = true;
+    else if (displayMode == 4 && nightscoutConfigured) valid = true;
+
+    // If we've looped back to where we started, break to avoid infinite loop
+    if (displayMode == startMode) break;
+
+    if (valid) break;
+  } while (attempts < MAX_ATTEMPTS);
+
+  // If no valid mode found, fall back to Clock
+  if (!valid) {
+    displayMode = 0;
+    Serial.println(F("[DISPLAY] Safe fallback to CLOCK"));
+  }
   lastSwitch = millis();
 }
 
@@ -1523,18 +1586,53 @@ void loop() {
   bool isDimmingActive = false;
 
   if (dimmingEnabled) {
+    // Determine if dimming is active (overnight-aware)
     if (startTotal < endTotal) {
       isDimmingActive = (curTotal >= startTotal && curTotal < endTotal);
-    } else {  // Overnight dimming
+    } else {
       isDimmingActive = (curTotal >= startTotal || curTotal < endTotal);
     }
-    if (isDimmingActive) {
-      P.setIntensity(dimBrightness);
+
+    int targetBrightness = isDimmingActive ? dimBrightness : brightness;
+
+    if (targetBrightness == -1) {
+      if (!displayOff) {
+        Serial.println(F("[DISPLAY] Turning display OFF (dimming -1)"));
+        P.displayShutdown(true);
+        P.displayClear();
+        displayOff = true;
+        displayOffByDimming = true;
+        displayOffByBrightness = false;
+      }
     } else {
-      P.setIntensity(brightness);
+      if (displayOff && displayOffByDimming) {
+        Serial.println(F("[DISPLAY] Waking display (dimming end)"));
+        P.displayShutdown(false);
+        displayOff = false;
+        displayOffByDimming = false;
+      }
+      P.setIntensity(targetBrightness);
     }
   } else {
-    P.setIntensity(brightness);
+    // Dimming disabled: just obey brightness slider
+    if (brightness == -1) {
+      if (!displayOff) {
+        Serial.println(F("[DISPLAY] Turning display OFF (brightness -1)"));
+        P.displayShutdown(true);
+        P.displayClear();
+        displayOff = true;
+        displayOffByBrightness = true;
+        displayOffByDimming = false;
+      }
+    } else {
+      if (displayOff && displayOffByBrightness) {
+        Serial.println(F("[DISPLAY] Waking display (brightness changed)"));
+        P.displayShutdown(false);
+        displayOff = false;
+        displayOffByBrightness = false;
+      }
+      P.setIntensity(brightness);
+    }
   }
 
   // --- IMMEDIATE COUNTDOWN FINISH TRIGGER ---
@@ -1569,6 +1667,17 @@ void loop() {
     return;  // Exit loop early if showing IP
   }
 
+
+  // --- BRIGHTNESS/OFF CHECK ---
+  if (brightness == -1) {
+    if (!displayOff) {
+      Serial.println(F("[DISPLAY] Turning display OFF"));
+      P.displayShutdown(true);  // fully off
+      P.displayClear();
+      displayOff = true;
+    }
+    yield();
+  }
 
 
   // --- NTP State Machine ---
@@ -1621,7 +1730,7 @@ void loop() {
         lastNtpRetryAttempt = millis();  // set baseline on first fail
       }
 
-      unsigned long ntpRetryInterval = firstRetry ? 30000UL : 300000UL; // first retry after 30s, after that every 5 minutes
+      unsigned long ntpRetryInterval = firstRetry ? 30000UL : 300000UL;  // first retry after 30s, after that every 5 minutes
 
       if (millis() - lastNtpRetryAttempt > ntpRetryInterval) {
         lastNtpRetryAttempt = millis();
