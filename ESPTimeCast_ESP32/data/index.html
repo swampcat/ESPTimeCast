@@ -585,7 +585,7 @@ textarea::placeholder {
 
         <label style="margin-top: 1.75rem;" for="dimBrightness">Dimming Brightness: <span id="dimmingBrightnessValue">2</span></label>
         <input style="width: 100%;" type="range" min="-1" max="15" name="dimming_brightness" id="dimBrightness" value="2"
-        oninput="dimmingBrightnessValue.textContent = (this.value == -1 ? 'off' : this.value);">
+        oninput="dimmingBrightnessValue.textContent = (this.value == -1 ? 'Off' : this.value);">
         <br><br><br>
         <div class="form-group">
             <label style="display: flex; align-items: center; justify-content: space-between;">
@@ -642,15 +642,34 @@ document.addEventListener('DOMContentLoaded', function() {
   brightnessValue.textContent = brightnessSlider.value;
 });
 
-// Show/hide password toggle
+// Show/Hide Password toggle
 document.addEventListener("DOMContentLoaded", function () {
   const passwordInput = document.getElementById("password");
   const toggleCheckbox = document.getElementById("togglePassword");
 
   toggleCheckbox.addEventListener("change", function () {
-    passwordInput.type = this.checked ? "text" : "password";
+    if (this.checked) {
+      // Show password as text
+      passwordInput.type = "text";
+
+      // Only clear if it's the masked placeholder
+      if (passwordInput.value === "********") {
+        passwordInput.value = ""; 
+        passwordInput.placeholder = "Enter new password"; 
+      }
+    } else {
+      // Hide password as dots
+      passwordInput.type = "password";
+
+      // Remove placeholder only if it was set by show-password toggle
+      if (passwordInput.placeholder === "Enter new password") {
+        passwordInput.placeholder = "";
+      }
+    }
   });
 });
+
+
 
 window.onbeforeunload = function () {
   if (isSaving) {
@@ -680,7 +699,7 @@ window.onload = function () {
       document.getElementById('language').value = data.language || '';
       // Advanced:
       document.getElementById('brightnessSlider').value = typeof data.brightness !== "undefined" ? data.brightness : 10;
-      document.getElementById('brightnessValue').textContent = (document.getElementById('brightnessSlider').value == -1 ? 'off' : document.getElementById('brightnessSlider').value);
+      document.getElementById('brightnessValue').textContent = (document.getElementById('brightnessSlider').value == -1 ? 'Off' : document.getElementById('brightnessSlider').value);
       document.getElementById('flipDisplay').checked = !!data.flipDisplay;
       document.getElementById('ntpServer1').value = data.ntpServer1 || "";
       document.getElementById('ntpServer2').value = data.ntpServer2 || "";

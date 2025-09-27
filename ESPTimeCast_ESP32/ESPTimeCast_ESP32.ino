@@ -137,6 +137,19 @@ const unsigned long descriptionDuration = 3000;    // 3s for short text
 static unsigned long descScrollEndTime = 0;        // for post-scroll delay (re-used for scroll timing)
 const unsigned long descriptionScrollPause = 300;  // 300ms pause after scroll
 
+// --- Safe WiFi credential getters ---
+const char *getSafeSsid() {
+  return isAPMode ? "" : ssid;
+}
+
+const char *getSafePassword() {
+  if (strlen(password) == 0) {  // No password set yet — return empty string for fresh install
+    return "";
+  } else {  // Password exists — mask it in the web UI
+    return "********";
+  }
+}
+
 // Scroll flipped
 textEffect_t getEffectiveScrollDirection(textEffect_t desiredDirection, bool isFlipped) {
   if (isFlipped) {
@@ -329,10 +342,6 @@ void connectWiFi() {
     Serial.println(WiFi.softAPIP());
     isAPMode = true;
 
-    clearWiFiCredentialsInConfig();
-    strlcpy(ssid, "", sizeof(ssid));
-    strlcpy(password, "", sizeof(password));
-
     WiFiMode_t mode = WiFi.getMode();
     Serial.printf("[WIFI] WiFi mode after setting AP: %s\n",
                   mode == WIFI_OFF ? "OFF" : mode == WIFI_STA    ? "STA ONLY"
@@ -390,10 +399,6 @@ void connectWiFi() {
       Serial.println(WiFi.softAPIP());
       dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
       isAPMode = true;
-
-      clearWiFiCredentialsInConfig();
-      strlcpy(ssid, "", sizeof(ssid));
-      strlcpy(password, "", sizeof(password));
 
       auto mode = WiFi.getMode();
       Serial.printf("[WIFI] WiFi mode after STA failure and setting AP: %s\n",
@@ -589,7 +594,12 @@ void setupWebServer() {
       request->send(500, "application/json", "{\"error\":\"Failed to parse config.json\"}");
       return;
     }
+
+    // Always sanitize before sending to browser
+    doc[F("ssid")] = getSafeSsid();
+    doc[F("password")] = getSafePassword();
     doc[F("mode")] = isAPMode ? "ap" : "sta";
+
     String response;
     serializeJson(doc, response);
     request->send(200, "application/json", response);
@@ -634,7 +644,16 @@ void setupWebServer() {
       else if (n == "showWeatherDescription") doc[n] = (v == "true" || v == "on" || v == "1");
       else if (n == "dimmingEnabled") doc[n] = (v == "true" || v == "on" || v == "1");
       else if (n == "weatherUnits") doc[n] = v;
-      else {
+      else if (n == "password") {
+
+        if (v != "********" && v.length() > 0) {
+          doc[n] = v;  // user entered a new password
+        } else {
+          Serial.println(F("[SAVE] Password unchanged."));
+          // do nothing, keep the one already in doc
+        }
+
+      } else {
         doc[n] = v;
       }
     }
@@ -795,6 +814,22 @@ void setupWebServer() {
       serializeJson(errorDoc, response);
       request->send(404, "application/json", response);
     }
+  });
+
+  server.on("/clear_wifi", HTTP_POST, [](AsyncWebServerRequest *request) {
+    Serial.println(F("[WEBSERVER] Request: /clear_wifi"));
+    clearWiFiCredentialsInConfig();
+
+    DynamicJsonDocument okDoc(128);
+    okDoc[F("message")] = "✅ WiFi credentials cleared! Rebooting...";
+    String response;
+    serializeJson(okDoc, response);
+    request->send(200, "application/json", response);
+
+    request->onDisconnect([]() {
+      Serial.println(F("[WEBSERVER] Rebooting after clearing WiFi..."));
+      ESP.restart();
+    });
   });
 
   server.on("/ap_status", HTTP_GET, [](AsyncWebServerRequest *request) {
