@@ -3,6 +3,9 @@
 ![GitHub stars](https://img.shields.io/github/stars/mfactory-osaka/ESPTimeCast?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/mfactory-osaka/ESPTimeCast?style=social)
 ![Last Commit](https://img.shields.io/github/last-commit/mfactory-osaka/ESPTimeCast)
+[![Hackaday](https://img.shields.io/badge/Featured%20on-Hackaday-black?logo=hackaday&logoColor=white)](https://hackaday.com/2025/10/02/building-a-desk-display-for-time-and-weather-data)
+[![XDA Developers](https://img.shields.io/badge/Featured%20on-XDA%20Developers-blueviolet?logo=android&logoColor=white)](https://www.xda-developers.com/super-sleek-esp32-weather-station)
+
 
 **ESPTimeCast** is a WiFi-connected LED matrix clock and weather station based on ESP8266/ESP32 and MAX7219.  
 It displays the current time, day of the week, and local weather (temp/humidity/weather description) fetched from OpenWeatherMap.  
@@ -24,6 +27,13 @@ The case front panel (3mm) can be laser cut!
 [![Cults3D Downloads](https://img.shields.io/badge/Cults3D-77%20Downloads-blue?logo=cults3d)](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
 
 ---
+
+## 📰 Press Mentions
+
+ESPTimeCast has been featured on:  
+- [Hackaday](https://hackaday.com/2025/10/02/building-a-desk-display-for-time-and-weather-data)  
+- [XDA Developers](https://www.xda-developers.com/super-sleek-esp32-weather-station)  
+
 
 ## ✨ Features
 
@@ -275,6 +285,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
