@@ -599,7 +599,7 @@ void setupWebServer() {
 
     // Always sanitize before sending to browser
     doc[F("ssid")] = getSafeSsid();
-    doc[F("password")] = getSafePassword();  
+    doc[F("password")] = getSafePassword();
     doc[F("mode")] = isAPMode ? "ap" : "sta";
 
     String response;
@@ -2349,7 +2349,7 @@ void loop() {
       client.setInsecure();
       HTTPClient https;
       https.begin(client, ntpField);
-
+      client.setBufferSizes(512, 512);
       https.setTimeout(5000);  // This sets both the connection and response timeout.
 
       Serial.print("[HTTPS] Nightscout fetch initiated...\n");
