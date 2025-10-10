@@ -85,6 +85,26 @@ ESPTimeCast has been featured on:
 
 <img src="assets/wiring2.png" alt="Wiring" width="800" />
 
+**Board-Specific Pin Adjustments**
+
+- For Wemos D1 Mini (ESP8266, USB-C version):  
+Some USB-C variants use different boot-sensitive pins.  
+If your MAX7219 only lights up but doesn’t update, change D6 → D5 on your board and in the sketch:
+
+  - #define CLK_PIN 14  // D5  
+  - #define DATA_PIN 15 // D8  
+  - #define CS_PIN 13   // D7  
+
+- For Wemos D1 Mini ESP32:  
+The ESP32 version uses a different pin mapping.  
+Update the sketch as follows:  
+
+  - #define CLK_PIN 18  // D5  
+  - #define CS_PIN 5    // D8  
+  - #define DATA_PIN 23 // D7  
+
+Tip: Always double-check that VCC (5 V), GND, and DIN/CS/CLK match your MAX7219 module’s pin order — different modules sometimes label them differently.
+
 **Important hardware update:**  
 After observing overheating issues and unstable behavior when powering the MAX7219 matrix from the Mini D1’s 3.3V pin, we’re officially switching to powering the display via the 5V USB rail instead.  
 
@@ -285,6 +305,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
