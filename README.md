@@ -24,7 +24,7 @@ The case front panel (3mm) can be laser cut!
 <img src="assets/image02.png" alt="3D Printable Case V2" width="320" />
 
 [![Printables Downloads](https://img.shields.io/badge/Printables-234%20Downloads-orange?logo=prusa)](https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display)
-[![Cults3D Downloads](https://img.shields.io/badge/Cults3D-87%20Downloads-blue?logo=cults3d)](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
+[![Cults3D Downloads](https://img.shields.io/badge/Cults3D-88%20Downloads-blue?logo=cults3d)](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
 
 ---
 
@@ -70,42 +70,27 @@ ESPTimeCast has been featured on:
 
 **Power Supply Change** Switching from 3.3V to 5V for Display
 
- Note: although the pins are labeled differently in the V4 and the S2, the positions are the same as the V3.x
+ Note: Pins are in the same position but make sure the right declaration in in your sketch
 
-**Wemos D1 Mini (ESP8266) → MAX7219**  
+**Wemos D1 Mini (ESP8266) → MAX7219**
+**Wemos D1 Mini (ESP32) → MAX7219**
 **Wemos S2 Mini (ESP32) → MAX7219**
 
-| Wemos D1 Mini (v3.x) | Wemos D1 Mini (v4.0) | Wemos S2 Mini | MAX7219 |
-|:------:|:------:|:------:|:------|
-|  GND  |  GND  |  GND  |   GND  |
-|  D6   |  12  |  9  |   CLK  |
-|  D7   |  13  |  11  |   CS   |
-|  D8   |  15  |  12  |   DIN  |
-|  5V  |  5V  |  5V  |   VCC  | 
+| D1 Mini (Micro USB) | D1 Mini (USB C) | D1 Mini (ESP32) | S2 Mini | MAX7219 |
+|:-----:|:-----:|:-----:|:-----:|:------|
+|  GND  |  GND  |  GND  |  GND  |  GND  |
+|  5V   |  5V   |  5V   |  5V   |  VCC  | 
+|  D5   |  14   |  18   |  7    |  CLK  | 
+|  D7   |  13   |  23   |  11   |  CS   |
+|  D8   |  15   |  5    |  12   |  DIN  |
 
-<img src="assets/wiring2.png" alt="Wiring" width="800" />
 
-**Board-Specific Pin Adjustments**
-
-- For Wemos D1 Mini (ESP8266, USB-C version):  
-Some USB-C variants use different boot-sensitive pins.  
-If your MAX7219 only lights up but doesn’t update, change D6 → D5 on your board and in the sketch:
-
-  - #define CLK_PIN 14  // D5  
-  - #define DATA_PIN 15 // D8  
-  - #define CS_PIN 13   // D7  
-
-- For Wemos D1 Mini ESP32:  
-The ESP32 version uses a different pin mapping.  
-Update the sketch as follows:  
-
-  - #define CLK_PIN 18  // D5  
-  - #define CS_PIN 5    // D8  
-  - #define DATA_PIN 23 // D7  
+<img src="assets/wiring3.png" alt="Wiring" width="800" />
 
 Tip: Always double-check that VCC (5 V), GND, and DIN/CS/CLK match your MAX7219 module’s pin order — different modules sometimes label them differently.
 
 **Important hardware update:**  
+Pins have been update to be solder in the same place for all the Wemos boards, Check your board version and update the sketch accordingly.
 After observing overheating issues and unstable behavior when powering the MAX7219 matrix from the Mini D1’s 3.3V pin, we’re officially switching to powering the display via the 5V USB rail instead.  
 
 **What’s changing:**
@@ -125,8 +110,6 @@ After observing overheating issues and unstable behavior when powering the MAX72
 - Reduced heat load on the ESP8266 board
 - Avoid long-term damage to the onboard regulator
 - The MAX7219 works fine with 3.3V logic signals from the ESP (no need for level shifters)
-
-Note: Thanks to @Wood578Guy for the info on V4
 
 ---
 
@@ -305,6 +288,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
