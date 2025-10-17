@@ -20,9 +20,9 @@
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 #define MAX_DEVICES 4
-#define CLK_PIN 9
-#define CS_PIN 11
-#define DATA_PIN 12
+#define CLK_PIN 7 //D5
+#define CS_PIN 11 // D7
+#define DATA_PIN 12 //D8
 
 MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 AsyncWebServer server(80);
@@ -137,7 +137,7 @@ const unsigned long descriptionDuration = 3000;    // 3s for short text
 static unsigned long descScrollEndTime = 0;        // for post-scroll delay (re-used for scroll timing)
 const unsigned long descriptionScrollPause = 300;  // 300ms pause after scroll
 
-// --- Safe WiFi credential getters ---
+// --- Safe WiFi credential and API getters ---
 const char *getSafeSsid() {
   return isAPMode ? "" : ssid;
 }
@@ -147,6 +147,14 @@ const char *getSafePassword() {
     return "";
   } else {  // Password exists — mask it in the web UI
     return "********";
+  }
+}
+
+const char *getSafeApiKey() {
+  if (strlen(openWeatherApiKey) == 0) {
+    return "";
+  } else {
+    return "********************************";  // Always masked, even in AP mode
   }
 }
 
@@ -598,6 +606,7 @@ void setupWebServer() {
     // Always sanitize before sending to browser
     doc[F("ssid")] = getSafeSsid();
     doc[F("password")] = getSafePassword();
+    doc[F("openWeatherApiKey")] = getSafeApiKey();
     doc[F("mode")] = isAPMode ? "ap" : "sta";
 
     String response;
@@ -644,15 +653,24 @@ void setupWebServer() {
       else if (n == "showWeatherDescription") doc[n] = (v == "true" || v == "on" || v == "1");
       else if (n == "dimmingEnabled") doc[n] = (v == "true" || v == "on" || v == "1");
       else if (n == "weatherUnits") doc[n] = v;
-      else if (n == "password") {
 
+      else if (n == "password") {
         if (v != "********" && v.length() > 0) {
           doc[n] = v;  // user entered a new password
         } else {
           Serial.println(F("[SAVE] Password unchanged."));
           // do nothing, keep the one already in doc
         }
+      }
 
+      else if (n == "openWeatherApiKey") {
+        if (v != "********************************") {  // ignore mask only
+          doc[n] = v;           // save new key (even if empty)
+          Serial.print(F("[SAVE] API key updated: "));
+          Serial.println(v.length() == 0 ? "(empty)" : v);
+        } else {
+          Serial.println(F("[SAVE] API key unchanged (mask ignored)."));
+        }
       } else {
         doc[n] = v;
       }
@@ -1056,7 +1074,10 @@ void setupWebServer() {
     request->send(200, "application/json", "{\"ok\":true}");
   });
 
-
+  server.on("/generate_204", HTTP_GET, handleCaptivePortal);         // Android
+  server.on("/fwlink", HTTP_GET, handleCaptivePortal);               // Windows
+  server.on("/hotspot-detect.html", HTTP_GET, handleCaptivePortal);  // iOS/macOS
+  server.onNotFound(handleCaptivePortal);
   server.begin();
   Serial.println(F("[WEBSERVER] Web server started"));
 }

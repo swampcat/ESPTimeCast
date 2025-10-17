@@ -679,160 +679,149 @@ window.onbeforeunload = function () {
 
 window.onload = function () {
   fetch('/config.json')
-    .then(response => response.json())
-    .then(data => {
-      isAPMode = (data.mode === "ap");
-      if (isAPMode) {
-       document.querySelector('.geo-note').style.display = 'block';
-       document.getElementById('geo-button').classList.add('geo-disabled');
-       document.getElementById('geo-button').disabled = true;
-      }
+  .then(response => response.json())
+  .then(data => {
+    isAPMode = (data.mode === "ap");
+    if (isAPMode) {
+      document.querySelector('.geo-note').style.display = 'block';
+      document.getElementById('geo-button').classList.add('geo-disabled');
+      document.getElementById('geo-button').disabled = true;
+    }
+    document.getElementById('ssid').value = data.ssid || '';
+    document.getElementById('password').value = data.password || '';
+    const apiInput = document.getElementById('openWeatherApiKey');
+    if (data.openWeatherApiKey && data.openWeatherApiKey.trim() !== '') {
+      apiInput.value = MASK;
+      hasSavedKey = true;  // mark it as having a saved key
+    } else {
+      apiInput.value = '';
+      hasSavedKey = false;
+    }
+    document.getElementById('openWeatherCity').value = data.openWeatherCity || '';
+    document.getElementById('openWeatherCountry').value = data.openWeatherCountry || '';
+    document.getElementById('weatherUnits').checked = (data.weatherUnits === "imperial");
+    document.getElementById('clockDuration').value = (data.clockDuration || 10000) / 1000;
+    document.getElementById('weatherDuration').value = (data.weatherDuration || 5000) / 1000;
+    document.getElementById('language').value = data.language || '';
 
-      document.getElementById('ssid').value = data.ssid || '';
-      document.getElementById('password').value = data.password || '';
-      document.getElementById('openWeatherApiKey').value = data.openWeatherApiKey || '';
-      document.getElementById('openWeatherCity').value = data.openWeatherCity || '';
-      document.getElementById('openWeatherCountry').value = data.openWeatherCountry || '';
-      document.getElementById('weatherUnits').checked = (data.weatherUnits === "imperial");
-      document.getElementById('clockDuration').value = (data.clockDuration || 10000) / 1000;
-      document.getElementById('weatherDuration').value = (data.weatherDuration || 5000) / 1000;
-      document.getElementById('language').value = data.language || '';
-      // Advanced:
-      document.getElementById('brightnessSlider').value = typeof data.brightness !== "undefined" ? data.brightness : 10;
-      document.getElementById('brightnessValue').textContent = (document.getElementById('brightnessSlider').value == -1 ? 'Off' : document.getElementById('brightnessSlider').value);
-      document.getElementById('flipDisplay').checked = !!data.flipDisplay;
-      document.getElementById('ntpServer1').value = data.ntpServer1 || "";
-      document.getElementById('ntpServer2').value = data.ntpServer2 || "";
-      document.getElementById('twelveHourToggle').checked = !!data.twelveHourToggle;
-      document.getElementById('showDayOfWeek').checked = !!data.showDayOfWeek;
-      document.getElementById('showDate').checked = !!data.showDate;
-      document.getElementById('showHumidity').checked = !!data.showHumidity;
-      document.getElementById('colonBlinkEnabled').checked = !!data.colonBlinkEnabled;
-      document.getElementById('showWeatherDescription').checked = !!data.showWeatherDescription;
-      // Dimming controls
-const dimmingEnabledEl = document.getElementById('dimmingEnabled');
-const isDimming = (data.dimmingEnabled === true || data.dimmingEnabled === "true" || data.dimmingEnabled === 1);
-dimmingEnabledEl.checked = isDimming;
+    // Advanced:
+    document.getElementById('brightnessSlider').value = typeof data.brightness !== "undefined" ? data.brightness : 10;
+    document.getElementById('brightnessValue').textContent = (document.getElementById('brightnessSlider').value == -1 ? 'Off' : document.getElementById('brightnessSlider').value);
+    document.getElementById('flipDisplay').checked = !!data.flipDisplay;
+    document.getElementById('ntpServer1').value = data.ntpServer1 || "";
+    document.getElementById('ntpServer2').value = data.ntpServer2 || "";
+    document.getElementById('twelveHourToggle').checked = !!data.twelveHourToggle;
+    document.getElementById('showDayOfWeek').checked = !!data.showDayOfWeek;
+    document.getElementById('showDate').checked = !!data.showDate;
+    document.getElementById('showHumidity').checked = !!data.showHumidity;
+    document.getElementById('colonBlinkEnabled').checked = !!data.colonBlinkEnabled;
+    document.getElementById('showWeatherDescription').checked = !!data.showWeatherDescription;
 
-// Defer field enabling until checkbox state is rendered
-setTimeout(() => {
-  setDimmingFieldsEnabled(dimmingEnabledEl.checked);
-}, 0);
-
-dimmingEnabledEl.addEventListener('change', function () {
-  setDimmingFieldsEnabled(this.checked);
-});
-
-      document.getElementById('dimStartTime').value =
-  (data.dimStartHour !== undefined ? String(data.dimStartHour).padStart(2, '0') : "18") + ":" +
-  (data.dimStartMinute !== undefined ? String(data.dimStartMinute).padStart(2, '0') : "00");
-
-document.getElementById('dimEndTime').value =
-  (data.dimEndHour !== undefined ? String(data.dimEndHour).padStart(2, '0') : "08") + ":" +
-  (data.dimEndMinute !== undefined ? String(data.dimEndMinute).padStart(2, '0') : "00");
-
-      document.getElementById('dimBrightness').value = (data.dimBrightness !== undefined ? data.dimBrightness : 2);
-      // Then update the span's text content with that value
-      document.getElementById('dimmingBrightnessValue').textContent = (document.getElementById('dimBrightness').value == -1 ? 'Off' : document.getElementById('dimBrightness').value);
-
-      setDimmingFieldsEnabled(!!data.dimmingEnabled);
-
-      // --- NEW: Populate Countdown Fields ---
-      document.getElementById('isDramaticCountdown').checked = !!(data.countdown && data.countdown.isDramaticCountdown);
-      const countdownEnabledEl = document.getElementById('countdownEnabled'); // Get reference
-      countdownEnabledEl.checked = !!(data.countdown && data.countdown.enabled);
-
-      if (data.countdown && data.countdown.targetTimestamp) {
-          // Convert Unix timestamp (seconds) to milliseconds for JavaScript Date object
-          const targetDate = new Date(data.countdown.targetTimestamp * 1000);
-          const year = targetDate.getFullYear();
-          // Month is 0-indexed in JS, so add 1
-          const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
-          const day = targetDate.getDate().toString().padStart(2, '0');
-          const hours = targetDate.getHours().toString().padStart(2, '0');
-          const minutes = targetDate.getMinutes().toString().padStart(2, '0');
-
-          document.getElementById('countdownDate').value = `${year}-${month}-${day}`;
-          document.getElementById('countdownTime').value = `${hours}:${minutes}`;
-      } else {
-          // Clear fields if no target timestamp is set
-          document.getElementById('countdownDate').value = '';
-          document.getElementById('countdownTime').value = '';
-      }
-      // --- END NEW ---
-
-      // --- NEW: Countdown Label Input Validation ---
-      const countdownLabelInput = document.getElementById('countdownLabel');
-      countdownLabelInput.addEventListener('input', function() {
-        // Convert to uppercase and remove any characters that are not A-Z or space
-        // Note: The `maxlength` attribute in HTML handles the length limit.
-        this.value = this.value.toUpperCase().replace(/[^A-Z0-9 :!'.\-]/g, '');
-      });
-      // Set initial value for countdownLabel from config.json (apply validation on load too)
-      if (data.countdown && data.countdown.label) {
-          countdownLabelInput.value = data.countdown.label.toUpperCase().replace(/[^A-Z0-9 :!'.\-]/g, '');
-      } else {
-          countdownLabelInput.value = '';
-      }
-      // --- END NEW ---
-
-
-      // --- NEW: Countdown Toggle Event Listener & Field Enabling ---
-      // If you're using onchange="setCountdownEnabled(this.checked)" directly in HTML,
-      // you would add setCountdownFieldsEnabled(this.checked) there as well.
-      // If you are using addEventListener, keep this:
-      countdownEnabledEl.addEventListener('change', function() {
-          setCountdownEnabled(this.checked);       // Sends command to ESP
-          setCountdownFieldsEnabled(this.checked); // Enables/disables local fields
-      });
-
-const dramaticCountdownEl = document.getElementById('isDramaticCountdown');
-dramaticCountdownEl.addEventListener('change', function () {
-    setIsDramaticCountdown(this.checked);
-});
-
-      // Set initial state of fields when page loads
-      setCountdownFieldsEnabled(countdownEnabledEl.checked);
-      // --- END NEW ---
-
-      // Auto-detect browser's timezone if not set in config
-      if (!data.timeZone) {
-        try {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          if (
-            tz &&
-            document.getElementById('timeZone').querySelector(`[value="${tz}"]`)
-          ) {
-            document.getElementById('timeZone').value = tz;
-          } else {
-            document.getElementById('timeZone').value = '';
-          }
-        } catch (e) {
+    // Dimming controls
+    const dimmingEnabledEl = document.getElementById('dimmingEnabled');
+    const isDimming = (data.dimmingEnabled === true || data.dimmingEnabled === "true" || data.dimmingEnabled === 1);
+    dimmingEnabledEl.checked = isDimming;
+    // Defer field enabling until checkbox state is rendered
+    setTimeout(() => {
+      setDimmingFieldsEnabled(dimmingEnabledEl.checked);
+    }, 0);
+    dimmingEnabledEl.addEventListener('change', function () {
+      setDimmingFieldsEnabled(this.checked);
+    });
+    document.getElementById('dimStartTime').value =
+    (data.dimStartHour !== undefined ? String(data.dimStartHour).padStart(2, '0') : "18") + ":" +
+    (data.dimStartMinute !== undefined ? String(data.dimStartMinute).padStart(2, '0') : "00");
+    document.getElementById('dimEndTime').value =
+    (data.dimEndHour !== undefined ? String(data.dimEndHour).padStart(2, '0') : "08") + ":" +
+    (data.dimEndMinute !== undefined ? String(data.dimEndMinute).padStart(2, '0') : "00");
+    document.getElementById('dimBrightness').value = (data.dimBrightness !== undefined ? data.dimBrightness : 2);
+    // Then update the span's text content with that value
+    document.getElementById('dimmingBrightnessValue').textContent = (document.getElementById('dimBrightness').value == -1 ? 'Off' : document.getElementById('dimBrightness').value);
+    setDimmingFieldsEnabled(!!data.dimmingEnabled);
+    // --- Populate Countdown Fields ---
+    document.getElementById('isDramaticCountdown').checked = !!(data.countdown && data.countdown.isDramaticCountdown);
+    const countdownEnabledEl = document.getElementById('countdownEnabled'); // Get reference
+    countdownEnabledEl.checked = !!(data.countdown && data.countdown.enabled);
+    if (data.countdown && data.countdown.targetTimestamp) {
+        // Convert Unix timestamp (seconds) to milliseconds for JavaScript Date object
+        const targetDate = new Date(data.countdown.targetTimestamp * 1000);
+        const year = targetDate.getFullYear();
+        // Month is 0-indexed in JS, so add 1
+        const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = targetDate.getDate().toString().padStart(2, '0');
+        const hours = targetDate.getHours().toString().padStart(2, '0');
+        const minutes = targetDate.getMinutes().toString().padStart(2, '0');
+        document.getElementById('countdownDate').value = `${year}-${month}-${day}`;
+        document.getElementById('countdownTime').value = `${hours}:${minutes}`;
+    } else {
+        // Clear fields if no target timestamp is set
+        document.getElementById('countdownDate').value = '';
+        document.getElementById('countdownTime').value = '';
+    }
+    // Countdown Label Input Validation 
+    const countdownLabelInput = document.getElementById('countdownLabel');
+    countdownLabelInput.addEventListener('input', function() {
+      // Convert to uppercase and remove any characters that are not A-Z or space
+      // Note: The `maxlength` attribute in HTML handles the length limit.
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9 :!'.\-]/g, '');
+    });
+    // Set initial value for countdownLabel from config.json (apply validation on load too)
+    if (data.countdown && data.countdown.label) {
+        countdownLabelInput.value = data.countdown.label.toUpperCase().replace(/[^A-Z0-9 :!'.\-]/g, '');
+    } else {
+        countdownLabelInput.value = '';
+    }
+      // Countdown Toggle Event Listener & Field Enabling 
+    // If you're using onchange="setCountdownEnabled(this.checked)" directly in HTML,
+    // you would add setCountdownFieldsEnabled(this.checked) there as well.
+    // If you are using addEventListener, keep this:
+    countdownEnabledEl.addEventListener('change', function() {
+        setCountdownEnabled(this.checked);       // Sends command to ESP
+        setCountdownFieldsEnabled(this.checked); // Enables/disables local fields
+    });
+    const dramaticCountdownEl = document.getElementById('isDramaticCountdown');
+    dramaticCountdownEl.addEventListener('change', function () {
+        setIsDramaticCountdown(this.checked);
+    });
+    // Set initial state of fields when page loads
+    setCountdownFieldsEnabled(countdownEnabledEl.checked);
+    // Auto-detect browser's timezone if not set in config
+    if (!data.timeZone) {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (
+          tz &&
+          document.getElementById('timeZone').querySelector(`[value="${tz}"]`)
+        ) {
+          document.getElementById('timeZone').value = tz;
+        } else {
           document.getElementById('timeZone').value = '';
         }
-      } else {
-        document.getElementById('timeZone').value = data.timeZone;
+      } catch (e) {
+        document.getElementById('timeZone').value = '';
       }
-    })
-    .catch(err => {
-      console.error('Failed to load config:', err);
-      showSavingModal("");
-      updateSavingModal("⚠️ Failed to load configuration.", false);
-
-      // Show appropriate button for load error
-      removeReloadButton();
-      removeRestoreButton();
-      const errorMsg = (err.message || "").toLowerCase();
-      if (
-        errorMsg.includes("config corrupted") ||
-        errorMsg.includes("failed to write config") ||
-        errorMsg.includes("restore")
-      ) {
-        ensureRestoreButton();
-      } else {
-        ensureReloadButton();
-      }
-    });
+    } else {
+      document.getElementById('timeZone').value = data.timeZone;
+    }
+  })
+  .catch(err => {
+    console.error('Failed to load config:', err);
+    showSavingModal("");
+    updateSavingModal("⚠️ Failed to load configuration.", false);
+    // Show appropriate button for load error
+    removeReloadButton();
+    removeRestoreButton();
+    const errorMsg = (err.message || "").toLowerCase();
+    if (
+      errorMsg.includes("config corrupted") ||
+      errorMsg.includes("failed to write config") ||
+      errorMsg.includes("restore")
+    ) {
+      ensureRestoreButton();
+    } else {
+      ensureReloadButton();
+    }
+  });
   document.querySelector('html').style.height = 'unset';       
   document.body.classList.add('loaded');     
 };
@@ -848,6 +837,15 @@ async function submitConfig(event) {
   const weatherDuration = parseInt(formData.get('weatherDuration')) * 1000;
   formData.set('clockDuration', clockDuration);
   formData.set('weatherDuration', weatherDuration);
+
+  let apiKeyToSend = apiInput.value;
+
+  // If the user left the masked key untouched, skip sending it
+  if (apiKeyToSend === MASK && hasSavedKey) {
+    formData.delete('openWeatherApiKey');
+  } else {
+    formData.set('openWeatherApiKey', apiKeyToSend);
+  }
 
   // Advanced: ensure correct values are set for advanced fields
   formData.set('brightness', document.getElementById('brightnessSlider').value);
@@ -893,8 +891,6 @@ async function submitConfig(event) {
     params.append(pair[0], pair[1]);
   }
 
-  showSavingModal("Saving...");
-
   // Check AP mode status
   let isAPMode = false;
   try {
@@ -906,6 +902,20 @@ async function submitConfig(event) {
     // Handle error appropriately (e.g., assume not in AP mode)
   }
 
+  if (isAPMode) {
+    showSavingModal("");
+    updateSavingModal(
+      "✅ Settings saved successfully!<br><br>" +
+      "Rebooting the device now...<br><br>" +
+      "Your device will connect to your Wi-Fi.<br>" +
+      "Its new IP address will appear on the display for future access.",
+      true // show spinner
+    );
+    } else{
+      showSavingModal("");
+    };  
+
+  await new Promise(resolve => setTimeout(resolve, isAPMode ? 5000 : 0));
   fetch('/save', {
     method: 'POST',
     body: params
@@ -922,19 +932,23 @@ async function submitConfig(event) {
     isSaving = false;
     removeReloadButton();
     removeRestoreButton();
-    if (isAPMode) {
-      updateSavingModal("✅ Settings saved successfully!<br><br>Rebooting the device now... ", false);
-      setTimeout(() => {        
-        document.getElementById('configForm').style.display = 'none';
-        document.querySelector('.footer').style.display = 'none';
-        document.querySelector('html').style.height = '100vh';
-        document.body.style.height = '100vh';
-        document.getElementById('configForm').style.display = 'none';
-        updateSavingModal("✅ All done!<br>You can now close this tab safely.<br><br>Your device is now rebooting and connecting to your Wi-Fi. Its new IP address will appear on the display for future access.", false);
-      }, 5000);
-      return;
 
-    } else {
+    if (isAPMode) {
+      setTimeout(() => {
+      document.getElementById('configForm').style.display = 'none';
+      document.querySelector('.footer').style.display = 'none';
+      document.querySelector('html').style.height = '100vh';
+      document.body.style.height = '100vh';
+      updateSavingModal(
+        "✅ All done!<br>You can now close this tab safely.<br><br>" +
+        "Your device has rebooted and is now connected to your Wi-Fi.<br>" +
+        "Check the display for the current IP address.",
+        false // stop spinner
+      );
+    }, 5000);
+  return;
+  } else {
+      showSavingModal("");
       updateSavingModal("✅ Configuration saved successfully.<br><br>Device will reboot", false);
       setTimeout(() => location.href = location.href.split('#')[0], 3000);
     }
@@ -948,7 +962,9 @@ async function submitConfig(event) {
       updateSavingModal("✅ Settings saved successfully!<br><br>Rebooting the device now... ", false);
       setTimeout(() => {
         document.getElementById('configForm').style.display = 'none'; 
-        updateSavingModal("✅ All done!<br>You can now close this tab safely.<br><br>Your device is now rebooting and connecting to your Wi-Fi. Its new IP address will appear on the display for future access.", false);
+        updateSavingModal("✅ All done!<br>You can now close this tab safely.<br><br>" +
+        "Your device has rebooted and is now connected to your Wi-Fi.<br>" +
+        "Check the display for the current IP address.", false);
       }, 5000);
       removeReloadButton();
       removeRestoreButton();
@@ -1055,32 +1071,31 @@ function removeRestoreButton() {
   let btn = document.getElementById('restoreButton');
   if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
 }
-
 function restoreBackupConfig() {
   showSavingModal("Restoring backup...");
   removeReloadButton();
   removeRestoreButton();
 
   fetch('/restore', { method: 'POST' })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Server returned an error");
-      }
-      return response.json();
-    })
-    .then(data => {
-      updateSavingModal("✅ Backup restored! Device will now reboot.");
-      setTimeout(() => location.reload(), 1500);
-    })
-    .catch(err => {
-      console.error("Restore error:", err);
-      updateSavingModal(`❌ Failed to restore backup: ${err.message}`, false);
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("Server returned an error");
+    }
+    return response.json();
+  })
+  .then(data => {
+    updateSavingModal("✅ Backup restored! Device will now reboot.");
+    setTimeout(() => location.reload(), 1500);
+  })
+  .catch(err => {
+    console.error("Restore error:", err);
+    updateSavingModal(`❌ Failed to restore backup: ${err.message}`, false);
 
-      // Show only one button, for backup restore failures show reload.
-      removeReloadButton();
-      removeRestoreButton();
-      ensureReloadButton();
-    });
+    // Show only one button, for backup restore failures show reload.
+    removeReloadButton();
+    removeRestoreButton();
+    ensureReloadButton();
+  });
 }
 
 function hideSavingModal() {
@@ -1092,28 +1107,28 @@ function hideSavingModal() {
 }
 
 const toggle = document.querySelector('.collapsible-toggle');
-    const content = document.querySelector('.collapsible-content');
-    toggle.addEventListener('click', function() {
-      const isOpen = toggle.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', isOpen);
-      content.setAttribute('aria-hidden', !isOpen);
-      if(isOpen) {
-        content.style.height = content.scrollHeight + 'px';
-        content.addEventListener('transitionend', function handler() {
-          content.style.height = 'auto';
-          content.removeEventListener('transitionend', handler);
-        });
-      } else {
-        content.style.height = content.scrollHeight + 'px';
-        // Force reflow to make sure the browser notices the height before transitioning to 0
-        void content.offsetHeight;
-        content.style.height = '0px';
-      }
-    });
-    // Optional: If open on load, set height to auto
-    if(toggle.classList.contains('open')) {
+const content = document.querySelector('.collapsible-content');
+toggle.addEventListener('click', function() {
+  const isOpen = toggle.classList.toggle('open');
+  toggle.setAttribute('aria-expanded', isOpen);
+  content.setAttribute('aria-hidden', !isOpen);
+  if(isOpen) {
+    content.style.height = content.scrollHeight + 'px';
+    content.addEventListener('transitionend', function handler() {
       content.style.height = 'auto';
-    }
+      content.removeEventListener('transitionend', handler);
+    });
+  } else {
+    content.style.height = content.scrollHeight + 'px';
+    // Force reflow to make sure the browser notices the height before transitioning to 0
+    void content.offsetHeight;
+    content.style.height = '0px';
+  }
+});
+// Optional: If open on load, set height to auto
+if(toggle.classList.contains('open')) {
+  content.style.height = 'auto';
+}
 
 let brightnessDebounceTimeout = null;
 
@@ -1217,21 +1232,20 @@ function setCountdownFieldsEnabled(enabled) {
 
 // Existing function to send countdown enable/disable command to ESP
 function setCountdownEnabled(val) {
-    fetch('/set_countdown_enabled', {
-        method: 'POST',
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "value=" + (val ? 1 : 0) // Send 1 for true, 0 for false
-    });
+  fetch('/set_countdown_enabled', {
+      method: 'POST',
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "value=" + (val ? 1 : 0) // Send 1 for true, 0 for false
+  });
 }
 
 function setIsDramaticCountdown(val) {
-    fetch('/set_dramatic_countdown', {
-        method: 'POST',
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "value=" + (val ? 1 : 0) // Send 1 for true, 0 for false
-    });
+  fetch('/set_dramatic_countdown', {
+      method: 'POST',
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "value=" + (val ? 1 : 0) // Send 1 for true, 0 for false
+  });
 }
-
 // --- END Countdown Controls Logic ---
 
 
@@ -1244,37 +1258,82 @@ function setDimmingFieldsEnabled(enabled) {
 
 function getLocation() {
   fetch('http://ip-api.com/json/')
-    .then(response => response.json())
-    .then(data => {
-      // Update your latitude/longitude fields
-      document.getElementById('openWeatherCity').value = data.lat;
-      document.getElementById('openWeatherCountry').value = data.lon;
+  .then(response => response.json())
+  .then(data => {
+    // Update your latitude/longitude fields
+    document.getElementById('openWeatherCity').value = data.lat;
+    document.getElementById('openWeatherCountry').value = data.lon;
 
-      // Determine the label to show on the button
-      const button = document.getElementById('geo-button');
-      let label = data.city;
-      if (!label) label = data.regionName;
-      if (!label) label = data.country;
-      if (!label) label = "Location Found";
+    // Determine the label to show on the button
+    const button = document.getElementById('geo-button');
+    let label = data.city;
+    if (!label) label = data.regionName;
+    if (!label) label = data.country;
+    if (!label) label = "Location Found";
 
-      button.textContent = "Location: " + label;
-      button.disabled = true;
-      button.classList.add('geo-disabled');
+    button.textContent = "Location: " + label;
+    button.disabled = true;
+    button.classList.add('geo-disabled');
 
-      console.log("Location fetched via ip-api.com. Free service: http://ip-api.com/");
-    })
-    .catch(error => {
-      alert(
-        "Failed to guess your location.\n\n" +
-        "This may happen if:\n" +
-        "- You are using an AdBlocker\n" +
-        "- There is a network issue\n" +
-        "- The service might be temporarily down.\n\n" +
-        "You can visit https://openweathermap.org/find to manually search for your city and get latitude/longitude."
-      );
-    });
+    console.log("Location fetched via ip-api.com. Free service: http://ip-api.com/");
+  })
+  .catch(error => {
+    alert(
+      "Failed to guess your location.\n\n" +
+      "This may happen if:\n" +
+      "- You are using an AdBlocker\n" +
+      "- There is a network issue\n" +
+      "- The service might be temporarily down.\n\n" +
+      "You can visit https://openweathermap.org/find to manually search for your city and get latitude/longitude."
+    );
+  });
 }
 
+
+// --- OpenWeather API Key field UX ---
+const MASK_LENGTH = 32;
+const MASK = '*'.repeat(MASK_LENGTH);
+const apiInput = document.getElementById('openWeatherApiKey');
+let hasSavedKey = false;
+
+// --- Initialize the field after config load ---
+if (apiInput.value && apiInput.value.trim() !== '') {
+  apiInput.value = MASK;   // show mask
+  hasSavedKey = true;
+} else {
+  apiInput.value = '';
+  hasSavedKey = false;
+}
+
+// --- Detect user clearing intent ---
+apiInput.addEventListener('input', () => {
+  apiInput.dataset.clearing = apiInput.value === '' ? 'true' : 'false';
+});
+
+// --- Handle Delete/Backspace when focused but empty ---
+apiInput.addEventListener('keydown', (e) => {
+  if ((e.key === 'Backspace' || e.key === 'Delete') && apiInput.value === '') {
+    apiInput.dataset.clearing = 'true';
+  }
+});
+
+// --- Focus handler: clear mask for editing ---
+apiInput.addEventListener('focus', () => {
+  if (apiInput.value === MASK) apiInput.value = '';
+});
+
+// --- Blur handler: restore mask if user didn’t clear the field ---
+apiInput.addEventListener('blur', () => {
+  if (apiInput.value === '') {
+    if (hasSavedKey && apiInput.dataset.clearing !== 'true') {
+      apiInput.value = MASK; // remask
+    } else {
+      hasSavedKey = false; // user cleared the key
+      apiInput.dataset.clearing = 'false';
+      apiInput.value = ''; // leave blank
+    }
+  }
+});
 </script>
 </body>
 </html>
