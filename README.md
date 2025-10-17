@@ -129,7 +129,7 @@ The built-in web interface provides full configuration for:
 1. Power on the device. If WiFi fails, it auto-starts in AP mode:
    - **SSID:** `ESPTimeCast`
    - **Password:** `12345678`
-   - Open `http://192.168.4.1` or `http://setup.esp` in your browser.
+   - Captive portal should open automatically, if it doesn't open `http://192.168.4.1` or `http://setup.esp` in your browser.
 2. Set your WiFi and all other options.
 3. Click **Save Setting** – the device saves config, reboots, and connects.
 4. The device shows its local IP address after boot so you can login again for setting changes
@@ -288,6 +288,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
