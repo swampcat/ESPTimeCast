@@ -72,11 +72,9 @@ ESPTimeCast has been featured on:
 
  Note: Pins are in the same position but make sure the right declaration in in your sketch
 
-**Wemos D1 Mini (ESP8266) → MAX7219**
-**Wemos D1 Mini (ESP32) → MAX7219**
-**Wemos S2 Mini (ESP32) → MAX7219**
+**Board → MAX7219**  
 
-| D1 Mini (Micro USB) | D1 Mini (USB C) | D1 Mini (ESP32) | S2 Mini | MAX7219 |
+| D1 Mini (Micro USB) | D1 Mini (USB C) | D1 Mini (ESP 32) | S2 Mini | MAX 7219 |
 |:-----:|:-----:|:-----:|:-----:|:------|
 |  GND  |  GND  |  GND  |  GND  |  GND  |
 |  5V   |  5V   |  5V   |  5V   |  VCC  | 
@@ -288,6 +286,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
