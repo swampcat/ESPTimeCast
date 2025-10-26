@@ -20,9 +20,9 @@
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 #define MAX_DEVICES 4
-#define CLK_PIN 14 //D5
-#define CS_PIN 13 //D7
-#define DATA_PIN 15 //D8
+#define CLK_PIN 14   //D5
+#define CS_PIN 13    //D7
+#define DATA_PIN 15  //D8
 
 MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 AsyncWebServer server(80);
@@ -666,7 +666,7 @@ void setupWebServer() {
 
       else if (n == "openWeatherApiKey") {
         if (v != "********************************") {  // ignore mask only
-          doc[n] = v;           // save new key (even if empty)
+          doc[n] = v;                                   // save new key (even if empty)
           Serial.print(F("[SAVE] API key updated: "));
           Serial.println(v.length() == 0 ? "(empty)" : v);
         } else {
@@ -1262,19 +1262,24 @@ String buildWeatherURL() {
 
   bool latValid = isNumber(openWeatherCity) && isNumber(openWeatherCountry) && lat >= -90.0 && lat <= 90.0 && lon >= -180.0 && lon <= 180.0;
 
+  // Create encoded copies
+  String cityEncoded = String(openWeatherCity);
+  String countryEncoded = String(openWeatherCountry);
+  cityEncoded.replace(" ", "%20");
+  countryEncoded.replace(" ", "%20");
+
   if (latValid) {
     base += "lat=" + String(lat, 8) + "&lon=" + String(lon, 8);
   } else if (isFiveDigitZip(openWeatherCity) && String(openWeatherCountry).equalsIgnoreCase("US")) {
     base += "zip=" + String(openWeatherCity) + "," + String(openWeatherCountry);
   } else {
-    base += "q=" + String(openWeatherCity) + "," + String(openWeatherCountry);
+    base += "q=" + cityEncoded + "," + countryEncoded;
   }
 
   base += "&appid=" + String(openWeatherApiKey);
   base += "&units=" + String(weatherUnits);
 
   String langForAPI = String(language);
-
   if (langForAPI == "eo" || langForAPI == "ga" || langForAPI == "sw" || langForAPI == "ja") {
     langForAPI = "en";
   }
@@ -1282,7 +1287,6 @@ String buildWeatherURL() {
 
   return base;
 }
-
 
 
 void fetchWeather() {
