@@ -1256,38 +1256,59 @@ function setDimmingFieldsEnabled(enabled) {
   document.getElementById('dimBrightness').disabled = !enabled;
 }
 
-function getLocation() {
-  fetch('http://ip-api.com/json/')
-  .then(response => response.json())
-  .then(data => {
-    // Update your latitude/longitude fields
-    document.getElementById('openWeatherCity').value = data.lat;
-    document.getElementById('openWeatherCountry').value = data.lon;
+async function getLocation() {
+  const normalize = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v).trim();
+    if (!s || s.toLowerCase() === 'null' || s.toLowerCase() === 'none' || s === '-') return '';
+    return s;
+  };
 
-    // Determine the label to show on the button
-    const button = document.getElementById('geo-button');
-    let label = data.city;
-    if (!label) label = data.regionName;
-    if (!label) label = data.country;
-    if (!label) label = "Location Found";
+  const setFields = (lat, lon, label) => {
+    if (lat) document.getElementById('openWeatherCity').value = lat;
+    if (lon) document.getElementById('openWeatherCountry').value = lon;
+    const btn = document.getElementById('geo-button');
+    btn.textContent = "Location: " + (label || "Location Found");
+    btn.disabled = true;
+    btn.classList.add('geo-disabled');
+  };
 
-    button.textContent = "Location: " + label;
-    button.disabled = true;
-    button.classList.add('geo-disabled');
+  try {
+    // 1) get your public IP
+    const ipResp = await fetch('https://api.ipify.org?format=json');
+    if (!ipResp.ok) throw new Error('ipify failed: ' + ipResp.status);
+    const { ip } = await ipResp.json();
+    if (!ip) throw new Error('no IP returned by ipify');
 
-    console.log("Location fetched via ip-api.com. Free service: http://ip-api.com/");
-  })
-  .catch(error => {
+    // 2) call HackerTarget GeoIP with JSON output
+    const geoResp = await fetch(`https://api.hackertarget.com/geoip/?q=${encodeURIComponent(ip)}&output=json`);
+    if (!geoResp.ok) throw new Error('HackerTarget returned ' + geoResp.status);
+    const data = await geoResp.json();
+
+    // 3) extract and normalize fields
+    const lat = data.latitude;
+    const lon = data.longitude;
+    const city = normalize(data.city);
+    const state = normalize(data.state);
+    const country = normalize(data.country);
+    const label = city || state || country || "Location Found";
+
+    if (!lat || !lon) throw new Error('missing latitude/longitude');
+
+    setFields(lat, lon, label);
+    //console.log('Location fetched via HackerTarget. Label:', label);
+  } catch (err) {
+    console.error('HackerTarget geolocation failed:', err);
     alert(
-      "Failed to guess your location.\n\n" +
-      "This may happen if:\n" +
-      "- You are using an AdBlocker\n" +
-      "- There is a network issue\n" +
-      "- The service might be temporarily down.\n\n" +
-      "You can visit https://openweathermap.org/find to manually search for your city and get latitude/longitude."
+      "Failed to guess your location using HackerTarget.\n\n" +
+      "Possible causes:\n" +
+      "- CORS blocking in browser (try server-side)\n" +
+      "- Network issue or rate limit\n\n" +
+      "You can manually search for coordinates on https://openweathermap.org/find"
     );
-  });
+  }
 }
+
 
 
 // --- OpenWeather API Key field UX ---
