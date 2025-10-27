@@ -31,6 +31,9 @@ AsyncWebServer server(80);
 const int GENERAL_SCROLL_SPEED = 85;  // Default: Adjust this for Weather Description and Countdown Label (e.g., 50 for faster, 200 for slower)
 const int IP_SCROLL_SPEED = 115;      // Default: Adjust this for the IP Address display (slower for readability)
 
+// --- Nightscout setting ---
+const unsigned int NIGHTSCOUT_IDLE_THRESHOLD_MIN = 10;  // minutes before data is considered outdated
+
 // WiFi and configuration globals
 char ssid[32] = "";
 char password[64] = "";
@@ -2376,6 +2379,21 @@ void loop() {
     const unsigned long NIGHTSCOUT_FETCH_INTERVAL = 150000;  // 2.5 minutes
     static int currentGlucose = -1;
     static String currentDirection = "?";
+    static time_t lastGlucoseTime = 0;  // store timestamp from JSON
+
+    // --- Small helper inside this block ---
+    auto makeTimeUTC = [](struct tm *tm) -> time_t {
+      time_t t;
+      char *tz = getenv("TZ");
+      setenv("TZ", "", 1);
+      tzset();
+      t = mktime(tm);
+      if (tz) setenv("TZ", tz, 1);
+      else unsetenv("TZ");
+      tzset();
+      return t;
+    };
+    // --------------------------------------
 
     // Check if it's time to fetch new data or if we have no data yet
     if (currentGlucose == -1 || millis() - lastNightscoutFetchTime >= NIGHTSCOUT_FETCH_INTERVAL) {
@@ -2383,10 +2401,9 @@ void loop() {
       client.setInsecure();
       HTTPClient https;
       https.begin(client, ntpField);
-      https.setConnectTimeout(5000);
       https.setTimeout(5000);
 
-      Serial.print("[HTTPS] Nightscout fetch initiated...\n");
+      Serial.println("[HTTPS] Nightscout fetch initiated...");
       int httpCode = https.GET();
 
       if (httpCode == HTTP_CODE_OK) {
@@ -2398,8 +2415,22 @@ void loop() {
           JsonObject firstReading = doc[0].as<JsonObject>();
           currentGlucose = firstReading["glucose"] | firstReading["sgv"] | -1;
           currentDirection = firstReading["direction"] | "?";
+          const char *dateStr = firstReading["dateString"];
 
-          Serial.printf("Nightscout data fetched: mg/dL %d %s\n", currentGlucose, currentDirection.c_str());
+          // --- Parse ISO 8601 UTC time ---
+          if (dateStr) {
+            struct tm tm {};
+            if (sscanf(dateStr, "%4d-%2d-%2dT%2d:%2d:%2dZ",
+                       &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
+                       &tm.tm_hour, &tm.tm_min, &tm.tm_sec)
+                == 6) {
+              tm.tm_year -= 1900;
+              tm.tm_mon -= 1;
+              lastGlucoseTime = makeTimeUTC(&tm);
+            }
+          }
+
+          Serial.printf("Nightscout data fetched: %d mg/dL %s\n", currentGlucose, currentDirection.c_str());
         } else {
           Serial.println("Failed to parse Nightscout JSON");
         }
@@ -2408,11 +2439,28 @@ void loop() {
       }
 
       https.end();
-      lastNightscoutFetchTime = millis();  // Update the timestamp
+      lastNightscoutFetchTime = millis();
     }
 
-    // Display the data we have, which is now stored in static variables
+    // --- Display the data ---
     if (currentGlucose != -1) {
+      // Calculate age of reading
+      // Get current UTC time (avoid local timezone offset)
+      time_t nowLocal = time(nullptr);
+      struct tm *gmt = gmtime(&nowLocal);
+      time_t nowUTC = mktime(gmt);
+
+      bool isOutdated = false;
+      int ageMinutes = 0;
+
+      if (lastGlucoseTime > 0) {
+        double diffSec = difftime(nowUTC, lastGlucoseTime);
+        ageMinutes = (int)(diffSec / 60.0);
+        isOutdated = (ageMinutes > NIGHTSCOUT_IDLE_THRESHOLD_MIN);
+        Serial.printf("[NIGHTSCOUT] Data age: %d minutes old (threshold: %d)\n", ageMinutes, NIGHTSCOUT_IDLE_THRESHOLD_MIN);
+      }
+
+      // Pick arrow character
       char arrow;
       if (currentDirection == "Flat") arrow = 139;
       else if (currentDirection == "SingleUp") arrow = 134;
@@ -2423,7 +2471,10 @@ void loop() {
       else if (currentDirection == "FortyFiveDown") arrow = 140;
       else arrow = '?';
 
-      String displayText = String(currentGlucose) + String(arrow);
+      // Build display text
+      String displayText = "";
+      if (isOutdated) displayText += "º";  // add warning first
+      displayText += String(currentGlucose) + String(arrow);
 
       P.setTextAlignment(PA_CENTER);
       P.setCharSpacing(1);
@@ -2433,15 +2484,15 @@ void loop() {
       advanceDisplayMode();
       return;
     } else {
-      // If no data is available after the first fetch attempt, show an error and advance
       P.setTextAlignment(PA_CENTER);
       P.setCharSpacing(0);
       P.print(F("?)"));
-      delay(2000);  // Wait 2 seconds before advancing
+      delay(2000);
       advanceDisplayMode();
       return;
     }
   }
+
 
   //DATE Display Mode
   else if (displayMode == 5 && showDate) {
