@@ -20,8 +20,9 @@ Want to give your ESPTimeCast a home? You can 3D print a custom case for it!
 A styilish version (V2) of the case has just been released!   
 The case front panel (3mm) can be laser cut!
 
-<img src="assets/image01.png" alt="3D Printable Case V1" width="320" />
-<img src="assets/image02.png" alt="3D Printable Case V2" width="320" />
+<img src="assets/image01.png" alt="3D Printable Case V1" width="640" />
+<img src="assets/image02.png" alt="3D Printable Case V2" width="640" />
+
 <p align="left">
   <a href="https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display">
     <img src="https://img.shields.io/badge/Printables-249%20Downloads-orange?logo=prusa" width="210">
@@ -292,6 +293,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
