@@ -23,8 +23,8 @@ The case front panel (3mm) can be laser cut!
 <img src="assets/image01.png" alt="3D Printable Case V1" width="320" />
 <img src="assets/image02.png" alt="3D Printable Case V2" width="320" />
 
-[![Printables Downloads](https://img.shields.io/badge/Printables-246%20Downloads-orange?logo=prusa)](https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display)
-[![Cults3D Downloads](https://img.shields.io/badge/Cults3D-92%20Downloads-blue?logo=cults3d)](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
+[![Printables Downloads](https://img.shields.io/badge/Printables-249%20Downloads-orange?logo=prusa)](https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display)
+[![Cults3D Downloads](https://img.shields.io/badge/Cults3D-94%20Downloads-blue?logo=cults3d)](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
 
 ---
 
@@ -77,7 +77,7 @@ ESPTimeCast has been featured on:
 | D1 Mini (Micro USB) | D1 Mini (USB C) | D1 Mini (ESP 32) | S2 Mini | MAX 7219 |
 |:-----:|:-----:|:-----:|:-----:|:------|
 |  GND  |  GND  |  GND  |  GND  |  GND  |
-|  5V   |  5V   |  5V   |  5V   |  VCC  | 
+|  5V   |  5V/VBUS   |  5V/VBUS   |  5V/VBUS   |  VCC  | 
 |  D5   |  14   |  18   |  7    |  CLK  | 
 |  D7   |  13   |  23   |  11   |  CS   |
 |  D8   |  15   |  5    |  12   |  DIN  |
@@ -286,6 +286,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
