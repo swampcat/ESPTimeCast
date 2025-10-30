@@ -25,7 +25,7 @@ The case front panel (3mm) can be laser cut!
 
 <p align="left">
   <a href="https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display">
-    <img src="https://img.shields.io/badge/Printables-249%20Downloads-orange?logo=prusa" width="210">
+    <img src="https://img.shields.io/badge/Printables-250%20Downloads-orange?logo=prusa" width="210">
   </a>
   <br>
   <a href="https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219">
@@ -293,6 +293,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
