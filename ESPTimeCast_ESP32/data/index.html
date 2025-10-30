@@ -616,12 +616,12 @@ textarea::placeholder {
           </div>
         </div>
         <div class="form-group">
-            <label for="countdownLabel">Countdown Label (Optional):</label>
-              <input type="text" id="countdownLabel" name="countdownLabel" class="form-control"
-              placeholder="e.g., BIRTHDAY, VACATION" maxlength="24"
-              pattern="[A-Z0-9 :!'.\-]*"
-              title="Only uppercase letters, numbers, space, and : ! ' - . allowed">
-            <div class="small">Only uppercase letters, numbers, space, and : ! ' - . allowed</div>
+          <label for="countdownLabel">Countdown Label (Optional):</label>
+          <input type="text" id="countdownLabel" name="countdownLabel" class="form-control"
+            placeholder="e.g., BIRTHDAY, VACATION" maxlength="24"
+            pattern="[A-Z0-9 :!'\-.,_\+%\/?]*"
+            title="Only uppercase letters, numbers, space, and : ! ' - . , _ + % / ? allowed">
+          <div class="small">Only uppercase letters, numbers, space, and : ! ' - . ? , _ + % / allowed</div>
         </div>
         </div>   
     </div>
@@ -763,11 +763,11 @@ window.onload = function () {
     countdownLabelInput.addEventListener('input', function() {
       // Convert to uppercase and remove any characters that are not A-Z or space
       // Note: The `maxlength` attribute in HTML handles the length limit.
-      this.value = this.value.toUpperCase().replace(/[^A-Z0-9 :!'.\-]/g, '');
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9 :!'\-.,_\+%\/?]/g, '');
     });
     // Set initial value for countdownLabel from config.json (apply validation on load too)
     if (data.countdown && data.countdown.label) {
-        countdownLabelInput.value = data.countdown.label.toUpperCase().replace(/[^A-Z0-9 :!'.\-]/g, '');
+        countdownLabelInput.value = data.countdown.label.toUpperCase().replace(/[^A-Z0-9 :!'\-.,_\+%\/?]/g, '');
     } else {
         countdownLabelInput.value = '';
     }
@@ -882,7 +882,7 @@ async function submitConfig(event) {
   // Date and Time inputs are already handled by formData if they have a 'name' attribute
   // 'countdownDate' and 'countdownTime' are collected automatically
   // Also apply the same validation for the label when submitting
-  const finalCountdownLabel = document.getElementById('countdownLabel').value.toUpperCase().replace(/[^A-Z0-9 :!'.\-]/g, '');
+  const finalCountdownLabel = document.getElementById('countdownLabel').value.toUpperCase().replace(/[^A-Z0-9 :!'\-.,_\+%\/?]/g, '');
   formData.set('countdownLabel', finalCountdownLabel);
   // --- END NEW ---
 

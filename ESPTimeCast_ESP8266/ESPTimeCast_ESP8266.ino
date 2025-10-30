@@ -394,6 +394,14 @@ void connectWiFi() {
 
       // --- IP Display initiation ---
       pendingIpToShow = WiFi.localIP().toString();
+
+      // Replace all dots with your custom font code 184
+      for (int i = 0; i < pendingIpToShow.length(); i++) {
+        if (pendingIpToShow[i] == '.') {
+          pendingIpToShow[i] = 184;
+        }
+      }
+
       showingIp = true;
       ipDisplayCount = 0;  // Reset count for IP display
       P.displayClear();
@@ -1938,11 +1946,11 @@ void loop() {
           errorAltTimer = millis();
           showNtpError = !showNtpError;
         }
-        P.print(showNtpError ? F("?/") : F("?*"));
+        P.print(showNtpError ? F("(<") : F("(*"));
       } else if (!ntpSyncSuccessful) {
-        P.print(F("?/"));
+        P.print(F("(<"));
       } else if (!weatherAvailable) {
-        P.print(F("?*"));
+        P.print(F("(*"));
       }
     }
     // --- DISPLAY CLOCK ---
@@ -2016,7 +2024,7 @@ void loop() {
       } else {
         P.setCharSpacing(0);
         P.setTextAlignment(PA_CENTER);
-        P.print(F("?*"));
+        P.print(F("(*"));
       }
     }
     yield();
@@ -2311,6 +2319,15 @@ void loop() {
         if (strlen(countdownLabel) > 0) {
           label = String(countdownLabel);
           label.trim();
+
+          // Replace standard digits 0–9 with your custom font character codes
+          for (int i = 0; i < label.length(); i++) {
+            if (isDigit(label[i])) {
+              int num = label[i] - '0';           // 0–9
+              label[i] = 145 + ((num + 9) % 10);  // Maps 0→154, 1→145, ... 9→153
+            }
+          }
+
         } else {
           static const char *fallbackLabels[] = {
             "PARTY TIME", "SHOWTIME", "CLOCKOUT", "BLASTOFF",
@@ -2331,6 +2348,11 @@ void loop() {
         }
 
         String fullString = String(buf);
+
+        // --- Add a leading space only if showDayOfWeek is true ---
+        if (showDayOfWeek) {
+          fullString = " " + fullString;
+        }
 
         // Display the full string and scroll it
         P.setTextAlignment(PA_LEFT);
@@ -2464,7 +2486,7 @@ void loop() {
 
       // Build display text
       String displayText = "";
-      if (isOutdated) displayText += "º";  // add warning first
+      if (isOutdated) displayText += char(186);  // add warning first
       displayText += String(currentGlucose) + String(arrow);
 
       P.setTextAlignment(PA_CENTER);
@@ -2477,7 +2499,7 @@ void loop() {
     } else {
       P.setTextAlignment(PA_CENTER);
       P.setCharSpacing(0);
-      P.print(F("?)"));
+      P.print(F("())"));
       delay(2000);
       advanceDisplayMode();
       return;
