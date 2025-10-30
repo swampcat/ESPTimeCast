@@ -2395,15 +2395,20 @@ void loop() {
 
     // --- Small helper inside this block ---
     auto makeTimeUTC = [](struct tm *tm) -> time_t {
-      time_t t;
-      char *tz = getenv("TZ");
-      setenv("TZ", "", 1);
-      tzset();
-      t = mktime(tm);
-      if (tz) setenv("TZ", tz, 1);
-      else unsetenv("TZ");
-      tzset();
-      return t;
+#if defined(ESP32)
+      // ESP32: timegm() is not implemented — emulate correctly
+      struct tm tm_copy = *tm;
+      // mktime() interprets tm as local, but system time is UTC already
+      // so we can safely assume input is UTC
+      return mktime(&tm_copy);
+#elif defined(ESP8266)
+      // ESP8266: timegm() not available either, same logic
+      struct tm tm_copy = *tm;
+      return mktime(&tm_copy);
+#else
+      // Platforms with proper timegm()
+      return timegm(tm);
+#endif
     };
     // --------------------------------------
 
@@ -2486,13 +2491,41 @@ void loop() {
 
       // Build display text
       String displayText = "";
-      if (isOutdated) displayText += char(186);  // add warning first
-      displayText += String(currentGlucose) + String(arrow);
+      // ADD crossed digits
+      if (isOutdated) {
+
+        String glucoseStr = String(currentGlucose);
+
+        for (int i = 0; i < glucoseStr.length(); i++) {
+          if (isDigit(glucoseStr[i])) {
+            int num = glucoseStr[i] - '0';           // 0–9
+            glucoseStr[i] = 195 + ((num + 9) % 10);  // Maps 0→204, 1→195, ...
+          }
+        }
+
+        String separatedStr = "";
+        for (int i = 0; i < glucoseStr.length(); i++) {
+          separatedStr += glucoseStr[i];
+          if (i < glucoseStr.length() - 1) {
+            separatedStr += char(255);  // insert separator between digits
+          }
+        }
+
+        displayText += char(255);
+        displayText += char(255);
+        displayText += separatedStr;
+        displayText += char(255);
+        displayText += char(255);
+        displayText += " ";  // extra space
+        displayText += arrow;
+        P.setCharSpacing(0);
+      } else {
+        displayText += String(currentGlucose) + String(arrow);
+        P.setCharSpacing(1);
+      }
 
       P.setTextAlignment(PA_CENTER);
-      P.setCharSpacing(1);
       P.print(displayText.c_str());
-
       delay(weatherDuration);
       advanceDisplayMode();
       return;
