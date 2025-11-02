@@ -77,6 +77,12 @@ time_t countdownTargetTimestamp = 0;  // Unix timestamp
 char countdownLabel[64] = "";         // Label for the countdown
 bool isDramaticCountdown = true;      // Default to the dramatic countdown mode
 
+// Runtime Uptime Tracker
+unsigned long bootMillis = 0;                      // Stores millis() at boot
+unsigned long lastUptimeLog = 0;                   // Timer for hourly logging
+const unsigned long uptimeLogInterval = 600000UL;  // 10 minutes in ms
+unsigned long totalUptimeSeconds = 0;              // Persistent accumulated uptime in seconds
+
 // State management
 bool weatherCycleStarted = false;
 WiFiClient client;
@@ -124,7 +130,6 @@ String pendingIpToShow = "";
 bool countdownScrolling = false;
 unsigned long countdownScrollEndTime = 0;
 unsigned long countdownStaticStartTime = 0;  // For last-day static display
-
 
 // --- NEW GLOBAL VARIABLES FOR IMMEDIATE COUNTDOWN FINISH ---
 bool countdownFinished = false;                       // Tracks if the countdown has permanently finished
@@ -581,6 +586,12 @@ void printConfigToSerial() {
   Serial.println(countdownLabel);
   Serial.print(F("Dramatic Countdown Display: "));
   Serial.println(isDramaticCountdown ? "Yes" : "No");
+  Serial.print(F("Total Runtime: "));
+  if (totalUptimeSeconds > 0) {
+    Serial.println(formatUptime(totalUptimeSeconds));
+  } else {
+    Serial.println(F("No runtime recorded yet."));
+  }
   Serial.println(F("========================================"));
   Serial.println();
 }
@@ -792,6 +803,8 @@ void setupWebServer() {
 
     request->onDisconnect([]() {
       Serial.println(F("[WEBSERVER] Client disconnected, rebooting ESP..."));
+      saveUptime();
+      delay(100);  // ensure file is written
       ESP.restart();
     });
   });
@@ -834,6 +847,8 @@ void setupWebServer() {
       request->send(200, "application/json", response);
       request->onDisconnect([]() {
         Serial.println(F("[WEBSERVER] Rebooting after restore..."));
+        saveUptime();
+        delay(100);  // ensure file is written
         ESP.restart();
       });
 
@@ -859,6 +874,8 @@ void setupWebServer() {
 
     request->onDisconnect([]() {
       Serial.println(F("[WEBSERVER] Rebooting after clearing WiFi..."));
+      saveUptime();
+      delay(100);  // ensure file is written
       ESP.restart();
     });
   });
@@ -1396,6 +1413,57 @@ void fetchWeather() {
   http.end();
 }
 
+void loadUptime() {
+  if (LittleFS.exists("/uptime.dat")) {
+    File f = LittleFS.open("/uptime.dat", "r");
+    if (f) {
+      totalUptimeSeconds = f.parseInt();
+      f.close();
+      Serial.printf("[UPTIME] Loaded accumulated uptime: %lu seconds (%.2f hours)\n",
+                    totalUptimeSeconds, totalUptimeSeconds / 3600.0);
+    } else {
+      Serial.println(F("[UPTIME] Failed to open /uptime.dat for reading."));
+    }
+  } else {
+    Serial.println(F("[UPTIME] No previous uptime file found. Starting from 0."));
+    totalUptimeSeconds = 0;
+  }
+}
+
+void saveUptime() {
+  // Add runtime since boot to total
+  unsigned long runtimeSeconds = (millis() - bootMillis) / 1000;
+  totalUptimeSeconds += runtimeSeconds;
+
+  // Reset bootMillis so next period counts correctly
+  bootMillis = millis();
+
+  File f = LittleFS.open("/uptime.dat", "w");
+  if (f) {
+    f.print(totalUptimeSeconds);
+    f.close();
+    Serial.printf("[UPTIME] Saved accumulated uptime: %lu seconds (%.2f hours)\n",
+                  totalUptimeSeconds, totalUptimeSeconds / 3600.0);
+  } else {
+    Serial.println(F("[UPTIME] Failed to write /uptime.dat"));
+  }
+}
+
+// Returns formatted uptime (for web UI or logs)
+String formatUptime(unsigned long seconds) {
+  unsigned long days = seconds / 86400;
+  unsigned long hours = (seconds % 86400) / 3600;
+  unsigned long minutes = (seconds % 3600) / 60;
+  unsigned long secs = seconds % 60;
+
+  char buf[64];
+  if (days > 0)
+    sprintf(buf, "%lud %02lu:%02lu:%02lu", days, hours, minutes, secs);
+  else
+    sprintf(buf, "%02lu:%02lu:%02lu", hours, minutes, secs);
+  return String(buf);
+}
+
 
 
 // -----------------------------------------------------------------------------
@@ -1424,7 +1492,7 @@ void setup() {
     }
   }
   Serial.println(F("[SETUP] LittleFS file system mounted successfully."));
-
+  loadUptime();
   P.begin();  // Initialize Parola library
 
   P.setCharSpacing(0);
@@ -1456,6 +1524,8 @@ void setup() {
   displayMode = 0;
   lastSwitch = millis();
   lastColonBlink = millis();
+  bootMillis = millis();
+  saveUptime();
 }
 
 void advanceDisplayMode() {
@@ -2627,6 +2697,20 @@ void loop() {
     if (millis() - lastSwitch > weatherDuration) {
       advanceDisplayMode();
     }
+  }
+
+  unsigned long currentMillis = millis();
+  unsigned long runtimeSeconds = (currentMillis - bootMillis) / 1000;
+  unsigned long currentTotal = totalUptimeSeconds + runtimeSeconds;
+
+  // --- Log and save uptime every 10 minutes ---
+  const unsigned long uptimeLogInterval = 600000UL;  // 10 minutes in ms
+
+  if (currentMillis - lastUptimeLog >= uptimeLogInterval) {
+    lastUptimeLog = currentMillis;
+    Serial.printf("[UPTIME] Runtime: %s (total %.2f hours)\n",
+                  formatUptime(currentTotal).c_str(), currentTotal / 3600.0);
+    saveUptime();  // Save accumulated uptime every 10 minutes
   }
   yield();
 }
