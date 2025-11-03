@@ -630,6 +630,7 @@ textarea::placeholder {
 
 <div class="footer">
   Project by: <a href="https://www.instagram.com/mfactory.osaka" target="_blank" rel="noopener noreferrer">M-Factory</a><br>
+  Device uptime: <span id="uptimeDisplay">Loading...</span>
 </div>
 
 <div id="savingMessage"></div>
@@ -1355,6 +1356,61 @@ apiInput.addEventListener('blur', () => {
     }
   }
 });
+
+//Uptime 
+
+let uptimeSeconds = 0;
+let uptimeTimer;
+
+// Fetch uptime from ESP
+function fetchUptime() {
+  fetch('/uptime')
+    .then(res => res.text())
+    .then(text => {
+      //console.log('Uptime response:', text);
+      uptimeSeconds = parseUptimeToSeconds(text);
+      updateUptimeDisplay();
+      if (uptimeTimer) clearInterval(uptimeTimer);
+      uptimeTimer = setInterval(() => {
+        uptimeSeconds++;
+        updateUptimeDisplay();
+      }, 1000);
+    })
+    .catch(err => console.error('Error fetching /uptime:', err));
+}
+
+// Convert "14:56:54" or "1 day 3:12:33" → total seconds
+function parseUptimeToSeconds(text) {
+  let days = 0, h = 0, m = 0, s = 0;
+  const dayMatch = text.match(/(\d+)\s*day/);
+  if (dayMatch) days = parseInt(dayMatch[1]);
+  const timeMatch = text.match(/(\d+):(\d+):(\d+)/);
+  if (timeMatch) {
+    h = parseInt(timeMatch[1]);
+    m = parseInt(timeMatch[2]);
+    s = parseInt(timeMatch[3]);
+  }
+  return days * 86400 + h * 3600 + m * 60 + s;
+}
+
+// Format seconds → same "D days HH:MM:SS" style
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  seconds %= 86400;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${days > 0 ? days + ' day' + (days > 1 ? 's ' : ' ') : ''}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// Update the text on screen
+function updateUptimeDisplay() {
+  document.getElementById('uptimeDisplay').textContent = formatUptime(uptimeSeconds);
+}
+
+// Start it up
+fetchUptime();
+
 </script>
 </body>
 </html>

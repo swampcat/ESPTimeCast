@@ -1102,6 +1102,26 @@ void setupWebServer() {
     request->send(200, "application/json", "{\"ok\":true}");
   });
 
+  server.on("/uptime", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (!LittleFS.exists("/uptime.dat")) {
+      request->send(200, "text/plain", "No uptime recorded yet.");
+      return;
+    }
+
+    File f = LittleFS.open("/uptime.dat", "r");
+    if (!f) {
+      request->send(500, "text/plain", "Error reading uptime file.");
+      return;
+    }
+
+    String content = f.readString();
+    f.close();
+
+    unsigned long seconds = content.toInt();
+    String formatted = formatUptime(seconds);
+    request->send(200, "text/plain", formatted);
+  });
+
   server.on("/generate_204", HTTP_GET, handleCaptivePortal);         // Android
   server.on("/fwlink", HTTP_GET, handleCaptivePortal);               // Windows
   server.on("/hotspot-detect.html", HTTP_GET, handleCaptivePortal);  // iOS/macOS
@@ -1111,12 +1131,20 @@ void setupWebServer() {
 }
 
 void handleCaptivePortal(AsyncWebServerRequest *request) {
-  Serial.print(F("[WEBSERVER] Captive Portal Redirecting: "));
+  Serial.print(F("[WEBSERVER] Captive Portal triggered for URL: "));
   Serial.println(request->url());
-  request->redirect(String("http://") + WiFi.softAPIP().toString() + "/");
+
+  if (isAPMode) {
+    IPAddress apIP = WiFi.softAPIP();
+    String redirectUrl = "http://" + apIP.toString() + "/";
+    Serial.print(F("[WEBSERVER] Redirecting to captive portal: "));
+    Serial.println(redirectUrl);
+    request->redirect(redirectUrl);
+  } else {
+    Serial.println(F("[WEBSERVER] Not in AP mode — sending 404"));
+    request->send(404, "text/plain", "Not found");
+  }
 }
-
-
 
 String normalizeWeatherDescription(String str) {
   // Serbian Cyrillic → Latin
