@@ -1357,7 +1357,7 @@ apiInput.addEventListener('blur', () => {
   }
 });
 
-//Uptime 
+// --- Uptime Tracker ---
 
 let uptimeSeconds = 0;
 let uptimeTimer;
@@ -1367,7 +1367,6 @@ function fetchUptime() {
   fetch('/uptime')
     .then(res => res.text())
     .then(text => {
-      //console.log('Uptime response:', text);
       uptimeSeconds = parseUptimeToSeconds(text);
       updateUptimeDisplay();
       if (uptimeTimer) clearInterval(uptimeTimer);
@@ -1379,10 +1378,10 @@ function fetchUptime() {
     .catch(err => console.error('Error fetching /uptime:', err));
 }
 
-// Convert "14:56:54" or "1 day 3:12:33" → total seconds
+// Convert "14:56:54" or "2d 03:12:33" → total seconds
 function parseUptimeToSeconds(text) {
   let days = 0, h = 0, m = 0, s = 0;
-  const dayMatch = text.match(/(\d+)\s*day/);
+  const dayMatch = text.match(/(\d+)\s*(?:d|day)/i);
   if (dayMatch) days = parseInt(dayMatch[1]);
   const timeMatch = text.match(/(\d+):(\d+):(\d+)/);
   if (timeMatch) {
@@ -1393,14 +1392,18 @@ function parseUptimeToSeconds(text) {
   return days * 86400 + h * 3600 + m * 60 + s;
 }
 
-// Format seconds → same "D days HH:MM:SS" style
+// Format seconds → "2 days 04:09:31", "1 day 03:05:12", or "03:05:12"
 function formatUptime(seconds) {
   const days = Math.floor(seconds / 86400);
   seconds %= 86400;
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-  return `${days > 0 ? days + ' day' + (days > 1 ? 's ' : ' ') : ''}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  const timePart = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if (days > 1) return `${days} days ${timePart}`;
+  if (days === 1) return `1 day ${timePart}`;
+  return timePart;
 }
 
 // Update the text on screen
@@ -1410,6 +1413,7 @@ function updateUptimeDisplay() {
 
 // Start it up
 fetchUptime();
+
 
 </script>
 </body>
