@@ -147,7 +147,7 @@ const unsigned long descriptionScrollPause = 300;  // 300ms pause after scroll
 
 // --- Safe WiFi credential and API getters ---
 const char *getSafeSsid() {
-  return isAPMode ? "" : ssid;
+  return isAPMode ? "********" : ssid;
 }
 
 const char *getSafePassword() {
@@ -1076,7 +1076,6 @@ void setupWebServer() {
     request->send(200, "application/json", "{\"ok\":true}");
   });
 
-
   server.on("/set_dramatic_countdown", HTTP_POST, [](AsyncWebServerRequest *request) {
     bool enableDramaticNow = false;
     if (request->hasParam("value", true)) {
@@ -1121,6 +1120,168 @@ void setupWebServer() {
     String formatted = formatUptime(seconds);
     request->send(200, "text/plain", formatted);
   });
+
+  server.on("/export", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println(F("[WEBSERVER] Request: /export"));
+
+    File f;
+    if (LittleFS.exists("/config.json")) {
+      f = LittleFS.open("/config.json", "r");
+      Serial.println(F("[EXPORT] Using /config.json"));
+    } else if (LittleFS.exists("/config.bak")) {
+      f = LittleFS.open("/config.bak", "r");
+      Serial.println(F("[EXPORT] /config.json not found, using /config.bak"));
+    } else {
+      request->send(404, "application/json", "{\"error\":\"No config found\"}");
+      return;
+    }
+
+    DynamicJsonDocument doc(2048);
+    DeserializationError err = deserializeJson(doc, f);
+    f.close();
+    if (err) {
+      Serial.print(F("[EXPORT] Error parsing config: "));
+      Serial.println(err.f_str());
+      request->send(500, "application/json", "{\"error\":\"Failed to parse config\"}");
+      return;
+    }
+
+    // Only sanitize if NOT in AP mode
+    if (!isAPMode) {
+      doc["ssid"] = "********";
+      doc["password"] = "********";
+      doc["openWeatherApiKey"] = "********************************";
+    }
+
+    doc["mode"] = isAPMode ? "ap" : "sta";
+
+    String jsonOut;
+    serializeJsonPretty(doc, jsonOut);
+
+    AsyncWebServerResponse *resp = request->beginResponse(200, "application/json", jsonOut);
+    resp->addHeader("Content-Disposition", "attachment; filename=\"config.json\"");
+    request->send(resp);
+  });
+
+  server.on("/upload", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String html = R"rawliteral(
+    <!DOCTYPE html>
+    <html style="background: radial-gradient(ellipse at 70% 0%, #2b425a 0%, #171e23 100%); height: 100%;">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            color: #FFFFFF;
+            transition: opacity 0.6s cubic-bezier(.4, 0, .2, 1);
+            line-height: 1.5;
+            max-width: 300px;
+            margin: 3rem auto;
+            background: linear-gradient(120deg, rgba(45, 65, 90, 0.72) 0%, rgba(53, 133, 183, 0.38) 100%);
+            padding: 1.5rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 36px 0 rgba(40, 170, 255, 0.11), 0 2px 8px 0 rgba(44, 70, 110, 0.08);
+            border: 1.5px solid rgba(180, 230, 255, 0.10);
+            text-align: center;
+            }
+          
+          h3 {
+            margin-top: 0;
+            }
+
+          input::file-selector-button {
+            background: linear-gradient(90deg, #3e99bc, #47add4 85%);
+            color: white;
+            padding: 0.9rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.25s, transform 0.15s 
+            ease-in-out;
+            }
+        </style>
+      </head>
+      <body>
+        <h3>Upload config.json</h3>
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+          <input type="file" name="file" accept=".json" id="fileInput" onchange="this.form.submit()">
+        </form>
+      </body>
+    </html>
+  )rawliteral";
+    request->send(200, "text/html", html);
+  });
+
+  server.on(
+    "/upload", HTTP_POST, [](AsyncWebServerRequest *request) {
+      String html = R"rawliteral(
+      <!DOCTYPE html>
+      <html style="background: radial-gradient(ellipse at 70% 0%, #2b425a 0%, #171e23 100%); height: 100%;">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Upload Successful</title>
+          <meta http-equiv="refresh" content="1; url=/" />
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+              color: #FFFFFF;
+              transition: opacity 0.6s cubic-bezier(.4, 0, .2, 1);
+              line-height: 1.5;
+              max-width: 300px;
+              margin: 3rem auto;
+              background: linear-gradient(120deg, rgba(45, 65, 90, 0.72) 0%, rgba(53, 133, 183, 0.38) 100%);
+              padding: 1.5rem;
+              border-radius: 24px;
+              box-shadow: 0 10px 36px 0 rgba(40, 170, 255, 0.11), 0 2px 8px 0 rgba(44, 70, 110, 0.08);
+              border: 1.5px solid rgba(180, 230, 255, 0.10);
+              text-align: center;
+              }
+            
+            h3 {
+              margin-top: 0;
+              }
+
+            input::file-selector-button {
+              background: linear-gradient(90deg, #3e99bc, #47add4 85%);
+              color: white;
+              padding: 0.9rem;
+              font-size: 1rem;
+              font-weight: 600;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              text-align: center;
+              transition: background 0.25s, transform 0.15s 
+              ease-in-out;
+              }
+          </style>
+        </head>
+        <body>
+          <h3>File uploaded successfully!</h3>
+          <p>Returning to main page...</p>
+        </body>
+      </html>
+    )rawliteral";
+      request->send(200, "text/html", html);
+      // Restart after short delay to let browser handle redirect
+      request->onDisconnect([]() {
+        delay(500);  // ensure response is sent
+        ESP.restart();
+      });
+    },
+    [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final) {
+      static File f;
+      if (index == 0) {
+        f = LittleFS.open("/config.json", "w");  // start new file
+      }
+      if (f) f.write(data, len);  // write chunk
+      if (final) f.close();       // finish file
+    });
 
   server.on("/generate_204", HTTP_GET, handleCaptivePortal);         // Android
   server.on("/fwlink", HTTP_GET, handleCaptivePortal);               // Windows
