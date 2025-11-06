@@ -66,7 +66,7 @@ ESPTimeCast has been featured on:
   - **Countdown** function (Scroll / Dramatic)
   - Optional **glucose + trend** display (Nightscout-compatible, set via ntpserver2)
 
-## 🪛 Wiring - OCT 17 - Important Hardware Update ⚠️⚠️⚠️
+## 🪛 Wiring - OCT 17 - Important Hardware Update ⚠️ ⚠️ ⚠️
 
 **Pin assignments have been standardized across all Wemos D1 Mini and S2 Mini boards!**  
 Check your board version and make sure your **sketch matches the new pin layout**, especially note that **`CLK` is now on `D5` (was `D6`)**.
@@ -76,13 +76,13 @@ This change improves **brightness**, **stability**, and protects the **onboard v
 
 > **Note:** Pin positions on the header remain the same, but ensure your sketch uses the correct pin definitions.
 
-### What’s Changing
+#### What’s Changing
 
 - **Before:** Display VCC was connected to the **3.3V** pin on the ESP board  
 - **Now:** Display VCC connects to the **5V** pin (direct from USB power)  
 - **CLK:** moved from **D6 → D5**
 
-### Why This Change Is Needed
+#### Why This Change Is Needed
 
 - Standardized pin assignment across all Wemos D1 Mini and S2 Mini boards  
 - The **MAX7219** LED matrix is designed for **5V operation**  
@@ -92,7 +92,7 @@ This change improves **brightness**, **stability**, and protects the **onboard v
   - Voltage drop  
   - Regulator failure (some users saw only **2.4 V** output after damage)
 
-### Benefits of Using 5V
+#### Benefits of Using 5V
 
 - Brighter and more stable display output  
 - Reduced heat load on the ESP board  
@@ -100,13 +100,13 @@ This change improves **brightness**, **stability**, and protects the **onboard v
 - No level shifters required — **MAX7219 works fine with 3.3V logic signals**
 
 
-### Next Steps
+#### Next Steps
 
 - Double-check your board wiring before powering on  
 - Update your sketch pin definitions if you’re upgrading from an older build  
 - Reference the diagram below for correct wiring (coming next)
 
-**Board → MAX7219**  
+#### 🧩 Board → MAX7219 
 
 | D1 Mini (Micro USB) | D1 Mini (USB C) | D1 Mini (ESP 32) | S2 Mini | MAX 7219 |
 |:-----:|:-----:|:-----:|:-----:|:------|
@@ -132,7 +132,7 @@ The built-in web interface provides full configuration for:
 - **Display durations** for clock and weather (milliseconds)
 - **Advanced Settings** (see below)
 
-### First-time Setup / AP Mode
+## First-time Setup / AP Mode
 
 1. Power on the device. If WiFi fails, it auto-starts in AP mode:
    - **SSID:** `ESPTimeCast`
@@ -145,7 +145,7 @@ The built-in web interface provides full configuration for:
 > External links and the "Get My Location" button require internet access.  
 They won't work while the device is in AP Mode - connect to Wi-Fi first.
 
-### UI Example:
+## UI Example:
 <img src="assets/webui6.png" alt="Web Interface" width="640">
 
 
@@ -189,7 +189,7 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 
 This guide will walk you through setting up your environment and uploading the **ESPTimeCast** project to your **ESP8266** or **ESP32** board. Please follow the instructions carefully for your specific board type.
 
-### ⚙️ ESP8266 Setup
+#### ⚙️ ESP8266 Setup
 
 Follow these steps to prepare your Arduino IDE for ESP8266 development:
 
@@ -208,7 +208,7 @@ Follow these steps to prepare your Arduino IDE for ESP8266 development:
         * `ESPAsyncTCP` by ESP32Async
         * `ESPAsyncWebServer` by ESP32Async
 
-### ⚙️ ESP32 Setup
+#### ⚙️ ESP32 Setup
 
 Follow these steps to prepare your Arduino IDE for ESP32 development:
 
@@ -225,7 +225,7 @@ Follow these steps to prepare your Arduino IDE for ESP32 development:
         * `AsyncTCP` by ESP32Async
         * `ESPAsyncWebServer` by ESP32Async
 
-### ⬆️ Uploading the Code and Data
+#### ⬆️ Uploading the Code and Data
 
 Once your Arduino IDE is set up for your board (as described above):
 
@@ -258,7 +258,7 @@ The following table summarizes what will appear on the display in each scenario:
 | **Weather**  | ✅ Yes      | ❌ No          | 🗓️ Day Icon + ⏰ Time (e.g. `@ 14:53`)           |
 | **Weather**  | ❌ No       | ❌ No          |  `! TEMP` (no weather or time data)       |
 
-### **How it works:**
+## How it works:
 
 - The display automatically alternates between **Clock** and **Weather** modes (the duration for each is configurable).
 - If "Show Weather Description" is enabled a third mode **Description** will display after the **Weather** display with a duration of 3 seconds.
@@ -280,6 +280,7 @@ If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
