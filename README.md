@@ -7,9 +7,8 @@
 [![XDA Developers](https://img.shields.io/badge/Featured%20on-XDA%20Developers-blueviolet?logo=android&logoColor=white)](https://www.xda-developers.com/super-sleek-esp32-weather-station)
 
 
-**ESPTimeCast** is a WiFi-connected LED matrix clock and weather station based on ESP8266/ESP32 and MAX7219.  
-It displays the current time, day of the week, and local weather (temp/humidity/weather description) fetched from OpenWeatherMap.  
-Setup and configuration are fully managed via a built-in web interface.  
+**ESPTimeCast** is a sleek, WiFi-connected LED matrix clock and weather display built on **ESP8266/ESP32** and **MAX7219**.
+It combines real-time NTP time sync, live OpenWeatherMap updates, and a modern web-based configuration interface — all in one compact design.
 
 
 <video src="https://github.com/user-attachments/assets/78b6525d-8dcd-43fc-875e-28805e0f4fab"></video>
@@ -17,7 +16,7 @@ Setup and configuration are fully managed via a built-in web interface.
 ## 📦 3D Printable Case
 
 Want to give your ESPTimeCast a home? You can 3D print a custom case for it!  
-A styilish version (V2) of the case has just been released!   
+A stylish version (V2) of the case has just been released!   
 The case front panel (3mm) can be laser cut!
 
 <img src="assets/image01.png" alt="3D Printable Case V1" width="640" />
@@ -29,7 +28,7 @@ The case front panel (3mm) can be laser cut!
   </a>
   <br>
   <a href="https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219">
-    <img src="https://img.shields.io/badge/Cults3D-94%20Downloads-blue?logo=cults3d" width="180">
+    <img src="https://img.shields.io/badge/Cults3D-97%20Downloads-blue?logo=cults3d" width="180">
   </a>
 </p>
 
@@ -62,14 +61,15 @@ ESPTimeCast has been featured on:
   - **Weather description** toggle (displays: heavy rain, scattered clouds, thunderstorm etc.)
   - **Flip display** (180 degrees)
   - Adjustable display **brightness**
-  - Dimming Hours **Scheduling**
+  - **Scheduled** Dimming Hours
   - **Countdown** function (Scroll / Dramatic)
-  - Optional **glucose + trend** display (Nightscout-compatible, set via ntpserver2)
+  - Optinal: ESPTimeCast supports displaying glucose data from **Nightscout** servers every 5 minutes, alternating with weather information.
+
 
 ## 🪛 Wiring - OCT 17 - Important Hardware Update ⚠️ ⚠️ ⚠️
 
 **Pin assignments have been standardized across all Wemos D1 Mini and S2 Mini boards!**  
-Check your board version and make sure your **sketch matches the new pin layout**, especially note that **`CLK` is now on `D5` (was `D6`)**.
+Check your board version and make sure **your sketch matches the new pin layout**, especially note that **`CLK` is now on `D5` (was `D6`)**.
 
 After testing, we found that powering the MAX7219 matrix from the **D1 Mini’s 3.3V pin** can cause **overheating and unstable display behavior**, so we’re now officially powering the display from the **5V USB rail** instead.  
 This change improves **brightness**, **stability**, and protects the **onboard voltage regulator** from long-term damage.
@@ -167,7 +167,7 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 - **Flip Display**: Invert the display vertically/horizontally
 - **Brightness**: Off - 0 (dim) to 15 (bright)
 - **Dimming Feature**: Start time, end time and desired brightness selection
-- **Countdown** function, set a countdown to your favorit/next event, 2 modes: Scroll/Dramatic! 
+- **Countdown** function, set a countdown to your favorite/next event, 2 modes: Scroll/Dramatic! 
 
 >Non-English characters converted to their closest English alphabet.   
 >For Esperanto, Irish, and Swahili, weather description translations are not available. Japanese translations exist, but since the device cannot display all Japanese characters, English will be used in all these cases.  
@@ -185,6 +185,55 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 - **Latitude and Longitude** You can enter coordinates in the city field (lat.) and country field (long.)
 - **Time Zone:** Select from IANA zones (e.g., `America/New_York`, handles DST automatically)
 
+## 🧩 Hidden & Advanced Features
+
+ESPTimeCast includes a few optional “power-user” features that aren’t visible in the main interface but can be accessed directly from your browser. These are intended for advanced users who want more control or integration.
+
+#### 💾 `/export`
+Downloads your current configuration (`config.json`) directly from the device.  
+This is useful for creating backups or migrating settings between devices.
+
+**Example:**  
+```
+http://your-device-ip/export
+```
+The file will download automatically with your saved Wi-Fi credentials (safely masked for security) and all other settings.
+
+#### 📂 `/upload`
+Lets you manually upload a configuration file (`config.json`) to the device.  
+Perfect for restoring a backup or quickly switching between setups.
+
+**Usage:**
+1. Go to  
+   ```
+   http://your-device-ip/upload
+   ```
+2. Select your edited or backup `config.json` file.  
+3. The device will confirm the upload and automatically reboot with the new configuration.
+
+> *Tip:* You can export → edit the file on your computer → re-upload to test new settings without using the web interface.
+
+#### ⚕️ Nightscout Integration
+ESPTimeCast supports displaying glucose data from **Nightscout** servers alongside weather information.
+
+When the secondary NTP/URL field (`ntpServer2`) contains a valid Nightscout API endpoint for example:  
+```
+https://your-cgm-server/api/v1/entries/current.json?token=xxxxxxxxxxxxx
+```
+the device automatically enables **Glucose Display Mode**.
+
+In this mode:
+- The device fetches glucose data every 5 minutes.
+- Glucose value and trend direction are displayed alternately with time and weather.
+- The display duration for Nightscout data is the same as the weather display duration.
+- Weather data continues to display normally.
+- Debug logs confirm updates and Nightscout responses in the Serial Monitor.
+
+#### ⚠️ Notes
+- These features are optional and hidden from the main interface to avoid clutter.  
+- `/upload` and `/export` are intentionally unlinked from the UI to prevent accidental access.  
+- Always verify your Wi-Fi credentials and tokens before uploading edited configurations.
+  
 ## 🚀 Getting Started
 
 This guide will walk you through setting up your environment and uploading the **ESPTimeCast** project to your **ESP8266** or **ESP32** board. Please follow the instructions carefully for your specific board type.
@@ -276,76 +325,11 @@ The following table summarizes what will appear on the display in each scenario:
 
 ## Support this project
 
+ESPTimeCast is an open-source passion project designed to blend art, engineering, and information display.
 If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
