@@ -25,7 +25,7 @@ The case front panel (3mm) can be laser cut!
 
 <p align="left">
   <a href="https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display">
-    <img src="https://img.shields.io/badge/Printables-258%20Downloads-orange?logo=prusa" width="210">
+    <img src="https://img.shields.io/badge/Printables-259%20Downloads-orange?logo=prusa" width="210">
   </a>
   <br>
   <a href="https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219">
@@ -33,15 +33,12 @@ The case front panel (3mm) can be laser cut!
   </a>
 </p>
 
----
-
 ## 📰 Press Mentions
 
 ESPTimeCast has been featured on:  
 - [Hackaday](https://hackaday.com/2025/10/02/building-a-desk-display-for-time-and-weather-data)  
-- [XDA Developers](https://www.xda-developers.com/super-sleek-esp32-weather-station)  
-
-
+- [XDA Developers](https://www.xda-developers.com/super-sleek-esp32-weather-station)
+  
 ## ✨ Features
 
 - **LED Matrix Display (8x32)** powered by MAX7219, with custom font support
@@ -68,16 +65,46 @@ ESPTimeCast has been featured on:
   - Dimming Hours **Scheduling**
   - **Countdown** function (Scroll / Dramatic)
   - Optional **glucose + trend** display (Nightscout-compatible, set via ntpserver2)
-    
----
 
-## 🪛 Wiring
+## 🪛 Wiring - OCT 17 - Important Hardware Update ⚠️⚠️⚠️
+
+**Pin assignments have been standardized across all Wemos D1 Mini and S2 Mini boards!**  
+Check your board version and make sure your **sketch matches the new pin layout**, especially note that **`CLK` is now on `D5` (was `D6`)**.
+
+After testing, we found that powering the MAX7219 matrix from the **D1 Mini’s 3.3V pin** can cause **overheating and unstable display behavior**, so we’re now officially powering the display from the **5V USB rail** instead.  
+This change improves **brightness**, **stability**, and protects the **onboard voltage regulator** from long-term damage.
+
+> **Note:** Pin positions on the header remain the same, but ensure your sketch uses the correct pin definitions.
+
+### What’s Changing
+
+- **Before:** Display VCC was connected to the **3.3V** pin on the ESP board  
+- **Now:** Display VCC connects to the **5V** pin (direct from USB power)  
+- **CLK:** moved from **D6 → D5**
+
+### Why This Change Is Needed
+
+- Standardized pin assignment across all Wemos D1 Mini and S2 Mini boards  
+- The **MAX7219** LED matrix is designed for **5V operation**  
+- The **AMS1117 3.3V regulator** on most D1 Minis has limited current (~800 mA max, often less)  
+- High-brightness displays (especially green/yellow) can overload it, causing:
+  - Overheating  
+  - Voltage drop  
+  - Regulator failure (some users saw only **2.4 V** output after damage)
+
+### Benefits of Using 5V
+
+- Brighter and more stable display output  
+- Reduced heat load on the ESP board  
+- Prevents long-term regulator damage  
+- No level shifters required — **MAX7219 works fine with 3.3V logic signals**
 
 
+### Next Steps
 
-**Power Supply Change** Switching from 3.3V to 5V for Display
-
- Note: Pins are in the same position but make sure the right declaration in in your sketch
+- Double-check your board wiring before powering on  
+- Update your sketch pin definitions if you’re upgrading from an older build  
+- Reference the diagram below for correct wiring (coming next)
 
 **Board → MAX7219**  
 
@@ -92,31 +119,7 @@ ESPTimeCast has been featured on:
 
 <img src="assets/wiring3.png" alt="Wiring" width="800" />
 
-Tip: Always double-check that VCC (5 V), GND, and DIN/CS/CLK match your MAX7219 module’s pin order — different modules sometimes label them differently.
-
-**Important hardware update:**  
-Pins have been update to be solder in the same place for all the Wemos boards, Check your board version and update the sketch accordingly.
-After observing overheating issues and unstable behavior when powering the MAX7219 matrix from the Mini D1’s 3.3V pin, we’re officially switching to powering the display via the 5V USB rail instead.  
-
-**What’s changing:**
-- Before: Display VCC was connected to 3.3V pin on the ESP board.
-- Now: Display VCC will be connected to the board’s 5V pin (which comes directly from USB power).
-  
-**Why this change is needed:**
-- The MAX7219 LED matrix is designed for 5V operation.  
-- The onboard 3.3V regulator (usually an AMS1117) on the Mini D1 is very limited in current output (~800mA max, often much less in practice).  
-- High-brightness matrix modules — especially green/yellow displays — can draw enough current to overload the regulator, causing:
-  - Overheating
-  - Voltage drop
-  - Complete regulator failure (some users reported only 2.4V output after damage)
-
-**Benefits of using 5V:**
-- Higher brightness and more stable matrix performance
-- Reduced heat load on the ESP8266 board
-- Avoid long-term damage to the onboard regulator
-- The MAX7219 works fine with 3.3V logic signals from the ESP (no need for level shifters)
-
----
+> **Tip:** Always double-check that VCC (5V), GND, and DIN/CS/CLK match your MAX7219 module’s pin order — different modules sometimes label them differently.
 
 ## 🌐 Web UI & Configuration
 
@@ -139,13 +142,12 @@ The built-in web interface provides full configuration for:
 3. Click **Save Setting** – the device saves config, reboots, and connects.
 4. The device shows its local IP address after boot so you can login again for setting changes
 
-*External links and the "Get My Location" button require internet access.  
+> External links and the "Get My Location" button require internet access.  
 They won't work while the device is in AP Mode - connect to Wi-Fi first.
 
 ### UI Example:
-<img src="assets/webui6.png" alt="Web Interface" width="320">
+<img src="assets/webui6.png" alt="Web Interface" width="640">
 
----
 
 ## ⚙️ Advanced Settings
 
@@ -167,12 +169,10 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 - **Dimming Feature**: Start time, end time and desired brightness selection
 - **Countdown** function, set a countdown to your favorit/next event, 2 modes: Scroll/Dramatic! 
 
-*Non-English characters converted to their closest English alphabet.   
-*For Esperanto, Irish, and Swahili, weather description translations are not available. Japanese translations exist, but since the device cannot display all Japanese characters, English will be used in all these cases.  
+>Non-English characters converted to their closest English alphabet.   
+>For Esperanto, Irish, and Swahili, weather description translations are not available. Japanese translations exist, but since the device cannot display all Japanese characters, English will be used in all these cases.  
 
-Tip: Don't forget to press the save button to keep your settings
-
----
+> **Tip:** Don't forget to press the save button to keep your settings
 
 ## 📝 Configuration Notes
 
@@ -185,13 +185,9 @@ Tip: Don't forget to press the save button to keep your settings
 - **Latitude and Longitude** You can enter coordinates in the city field (lat.) and country field (long.)
 - **Time Zone:** Select from IANA zones (e.g., `America/New_York`, handles DST automatically)
 
----
-
 ## 🚀 Getting Started
 
 This guide will walk you through setting up your environment and uploading the **ESPTimeCast** project to your **ESP8266** or **ESP32** board. Please follow the instructions carefully for your specific board type.
-
----
 
 ### ⚙️ ESP8266 Setup
 
@@ -212,8 +208,6 @@ Follow these steps to prepare your Arduino IDE for ESP8266 development:
         * `ESPAsyncTCP` by ESP32Async
         * `ESPAsyncWebServer` by ESP32Async
 
----
-
 ### ⚙️ ESP32 Setup
 
 Follow these steps to prepare your Arduino IDE for ESP32 development:
@@ -231,8 +225,6 @@ Follow these steps to prepare your Arduino IDE for ESP32 development:
         * `AsyncTCP` by ESP32Async
         * `ESPAsyncWebServer` by ESP32Async
 
----
-
 ### ⬆️ Uploading the Code and Data
 
 Once your Arduino IDE is set up for your board (as described above):
@@ -249,9 +241,6 @@ Once your Arduino IDE is set up for your board (as described above):
     * Open the Command Palette (`Ctrl+Shift+P` on Windows, `Cmd+Shift+P` on macOS).
     * Search for and run: `Upload Little FS to Pico/ESP8266/ESP32` (the exact command name might vary).
     * **Important for ESP32:** If the upload fails, you might need to manually put your ESP32 into "Download Mode." While holding down the **Boot button** (often labeled 'BOOT' or 'IO0' or 'IO9'), briefly press and release the **RST button**, then release the Boot button.
-
----
-
 
 ## 📺 Display Behavior
 
@@ -285,14 +274,13 @@ The following table summarizes what will appear on the display in each scenario:
 - ❌ **No**: Data not available
 - — : Value does not affect this mode
 
----
-
-## ☕ Support this project
+## Support this project
 
 If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+
 
 
 
