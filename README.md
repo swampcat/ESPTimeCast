@@ -154,7 +154,7 @@ They won't work while the device is in AP Mode - connect to Wi-Fi first.
 
 &nbsp;
 ## UI Example:
-<img src="assets/webui6.png" alt="Web Interface" width="640">
+<img src="assets/webui7.png" alt="Web Interface" width="640">
 
 &nbsp;
 ## ⚙️ Advanced Settings
@@ -458,4 +458,5 @@ If you enjoy this project, please consider supporting my work:
 
 
       
+
 
