@@ -47,6 +47,7 @@ ESPTimeCast has been featured on:
 - **Simple Web Interface** for all configuration (WiFi, weather, time zone, display durations, and more)
 - **Automatic NTP Sync** with robust status feedback and retries
 - **Weather Fetching** from OpenWeatherMap (every 5 minutes, temp/humidity/description)
+- **Custom Scroll Messages** - fully persistent until manually cleared via the Web UI.
 - **Fallback AP Mode** for easy first-time setup or configuration
 - **Timezone Selection** from IANA names (DST integrated on backend)
 - **Get My Location** button to get your approximate Lat/Long.
@@ -134,6 +135,7 @@ The built-in web interface provides full configuration for:
 - **Time zone** (will auto-populate if TZ is found)
 - **Day of the Week and Weather Description** languages
 - **Display durations** for clock and weather (milliseconds)
+- **Custom Scroll Text** - set a persistent scrolling message on the display directly from the Web UI
 - **Advanced Settings** (see below)
 
 &nbsp;
@@ -279,6 +281,15 @@ rest_command:
 
 Then restart Home Assistant.
 
+#### ⚡ Quick Test via curl
+You can quickly test sending a message to your ESPTimeCast display using `curl` from any computer on the same network:
+
+```
+curl -X POST -d "message=HELLO WORLD&speed=50" "http://<device_ip>/set_custom_message"
+```
+> Replace <device_ip> with the IP of your ESPTimeCast device.  
+> The message parameter is your text to display.  
+> The optional speed parameter controls the scroll speed (10–200, lower = faster).
 
 #### 🧾 Notes
 
@@ -447,3 +458,4 @@ If you enjoy this project, please consider supporting my work:
 
 
       
+
