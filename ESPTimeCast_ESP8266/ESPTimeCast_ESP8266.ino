@@ -1182,22 +1182,20 @@ void setupWebServer() {
 
       // --- STORE MESSAGE ---
       if (isFromHA) {
-        // --- Preserve the current persistent message before overwriting ---
-        char prevMessage[sizeof(customMessage)];
-        strlcpy(prevMessage, customMessage, sizeof(prevMessage));
+        // --- Only backup if lastPersistentMessage exists ---
+        if (strlen(lastPersistentMessage) > 0) {
+          Serial.printf("[HA] Will preserve persistent message: '%s'\n", lastPersistentMessage);
+        } else {
+          Serial.println(F("[HA] No persistent message to preserve. HA message is temporary only."));
+        }
 
         // --- Overwrite customMessage with new temporary HA message ---
         filtered.toCharArray(customMessage, sizeof(customMessage));
-        messageScrollSpeed = localSpeed;  // Use HA-specified scroll speed
+        messageScrollSpeed = localSpeed;
 
-        // --- If no persistent message stored yet, keep the previous one ---
-        if (strlen(lastPersistentMessage) == 0 && strlen(prevMessage) > 0) {
-          strlcpy(lastPersistentMessage, prevMessage, sizeof(lastPersistentMessage));
-        }
-
-        Serial.printf("[HA] Temporary HA message received: %s (persistent=%s)\n",
-                      customMessage, lastPersistentMessage);
-
+        Serial.printf("[HA] Temporary HA message received: '%s' (persistent: '%s')\n",
+                      customMessage,
+                      strlen(lastPersistentMessage) ? lastPersistentMessage : "(none)");
       } else {
         // --- UI-originated message: permanent ---
         filtered.toCharArray(customMessage, sizeof(customMessage));
