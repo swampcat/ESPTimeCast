@@ -13,6 +13,7 @@ It combines real-time NTP time sync, live OpenWeatherMap updates, and a modern w
 
 <video src="https://github.com/user-attachments/assets/78b6525d-8dcd-43fc-875e-28805e0f4fab"></video>
 
+&nbsp;
 ## 📦 3D Printable Case
 
 Want to give your ESPTimeCast a home? You can 3D print a custom case for it!  
@@ -24,20 +25,22 @@ The case front panel (3mm) can be laser cut!
 
 <p align="left">
   <a href="https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display">
-    <img src="https://img.shields.io/badge/Printables-259%20Downloads-orange?logo=prusa" width="210">
+    <img src="https://img.shields.io/badge/Printables-260%20Downloads-orange?logo=prusa" width="210">
   </a>
   <br>
   <a href="https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219">
-    <img src="https://img.shields.io/badge/Cults3D-97%20Downloads-blue?logo=cults3d" width="180">
+    <img src="https://img.shields.io/badge/Cults3D-98%20Downloads-blue?logo=cults3d" width="180">
   </a>
 </p>
 
+&nbsp;
 ## 📰 Press Mentions
 
 ESPTimeCast has been featured on:  
 - [Hackaday](https://hackaday.com/2025/10/02/building-a-desk-display-for-time-and-weather-data)  
 - [XDA Developers](https://www.xda-developers.com/super-sleek-esp32-weather-station)
-  
+
+&nbsp;
 ## ✨ Features
 
 - **LED Matrix Display (8x32)** powered by MAX7219, with custom font support
@@ -65,7 +68,7 @@ ESPTimeCast has been featured on:
   - **Countdown** function (Scroll / Dramatic)
   - Optinal: ESPTimeCast supports displaying glucose data from **Nightscout** servers every 5 minutes, alternating with weather information.
 
-
+&nbsp;
 ## 🪛 Wiring - OCT 17 - Important Hardware Update ⚠️ ⚠️ ⚠️
 
 **Pin assignments have been standardized across all Wemos D1 Mini and S2 Mini boards!**  
@@ -121,6 +124,7 @@ This change improves **brightness**, **stability**, and protects the **onboard v
 
 > **Tip:** Always double-check that VCC (5V), GND, and DIN/CS/CLK match your MAX7219 module’s pin order — different modules sometimes label them differently.
 
+&nbsp;
 ## 🌐 Web UI & Configuration
 
 The built-in web interface provides full configuration for:
@@ -132,6 +136,7 @@ The built-in web interface provides full configuration for:
 - **Display durations** for clock and weather (milliseconds)
 - **Advanced Settings** (see below)
 
+&nbsp;
 ## First-time Setup / AP Mode
 
 1. Power on the device. If WiFi fails, it auto-starts in AP mode:
@@ -145,10 +150,11 @@ The built-in web interface provides full configuration for:
 > External links and the "Get My Location" button require internet access.  
 They won't work while the device is in AP Mode - connect to Wi-Fi first.
 
+&nbsp;
 ## UI Example:
 <img src="assets/webui6.png" alt="Web Interface" width="640">
 
-
+&nbsp;
 ## ⚙️ Advanced Settings
 
 Click the **cog icon** next to “Advanced Settings” in the web UI to reveal extra configuration options.  
@@ -174,6 +180,7 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 
 > **Tip:** Don't forget to press the save button to keep your settings
 
+&nbsp;
 ## 📝 Configuration Notes
 
 - **OpenWeatherMap API Key:**
@@ -185,6 +192,109 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 - **Latitude and Longitude** You can enter coordinates in the city field (lat.) and country field (long.)
 - **Time Zone:** Select from IANA zones (e.g., `America/New_York`, handles DST automatically)
 
+&nbsp;
+## 🏠 ESPTimeCast Home Assistant Integration
+
+This guide explains how to integrate **ESPTimeCast** with **Home Assistant** to send custom messages to your LED display.
+
+#### 🧠 Overview
+
+ESPTimeCast exposes a REST API endpoint that lets you send **scrolling messages** to the display from either **Home Assistant** or the built-in **Web UI**.
+
+- **Web UI messages** are **persistent** — they remain active until manually cleared via the Web UI.  
+- **Home Assistant messages** are **temporary overrides** - they appear immediately but do not modify the saved Web UI message.
+- **When cleared from HA** - the display will resume showing the previously saved UI message on the next update loop.
+
+#### 🔗 Endpoint
+
+```
+POST http://<device_ip>/set_custom_message
+```
+
+
+#### 📝 Parameters
+
+| Parameter | Type | Required | Description |
+|------------|------|-----------|-------------|
+| `message` | string | Yes | Message text to display. Send an empty string (`""`) to clear messages. |
+| `speed` | integer | Optional | Scrolling speed (range **10–200**). Lower values = **faster** scroll. |
+
+
+
+#### 💡 Behavior
+
+| Source | Behavior | Notes |
+|---------|-----------|-------|
+| **Home Assistant** | Displays message temporarily (until next mode rotation or clear). | Restores any saved Web UI message afterward. |
+| **Web UI** | Displays message persistently until manually cleared. | Acts as a permanent banner or ticker. |
+| **Clear command from Web UI** | Clears *all* messages (HA + UI). | Use this to reset the display completely. |
+| **Clear command from Home Assistant** | Clears only the temporary HA message. | UI message will reappear if one was saved. |
+
+
+
+#### ⚙️ Example Automations
+
+#### 1. Send a Temporary HA Message
+
+```yaml
+alias: Notify Door Open on ESPTimeCast
+trigger:
+  - platform: state
+    entity_id: binary_sensor.front_door
+    to: "on"
+action:
+  - service: rest_command.esptimecast_message
+    data:
+      message: "DOOR OPEN"
+      speed: 60  # lower = faster
+```
+
+#### 2. Clear the Message
+
+```yaml
+alias: Clear ESPTimeCast Message
+trigger:
+  - platform: state
+    entity_id: binary_sensor.front_door
+    to: "off"
+action:
+  - service: rest_command.esptimecast_message
+    data:
+      message: ""
+```
+
+
+#### 🧩 Example `rest_command` Configuration
+
+Add this to your `configuration.yaml`:
+
+```yaml
+rest_command:
+  esptimecast_message:
+    url: "http://<device_ip>/set_custom_message"
+    method: POST
+    content_type: "application/x-www-form-urlencoded"
+    payload: "message={{ message }}&speed={{ speed | default(85) }}"
+```
+
+Then restart Home Assistant.
+
+
+#### 🧾 Notes
+
+- Only **A–Z, 0–9**, spaces, and simple punctuation (`: ! ' - . , _ + % / ?`) are allowed.  
+- All text is automatically converted to **uppercase**.
+- Lower scroll speed values make the message **scroll faster**.
+- Custom Message scroll speed can be changed via this endpoint.
+
+#### ✅ Example Use Cases
+
+- Temporary alerts like **DOOR OPEN**, **RAIN STARTING**, or **MAIL DELIVERED**.  
+- Persistent ticker messages from the Web UI like **WELCOME HOME** or **ESPTIMECAST LIVE**.  
+- Combine both: Web UI for a base banner, and HA for transient automation messages.
+
+
+&nbsp;
 ## 🧩 Hidden & Advanced Features
 
 ESPTimeCast includes a few optional “power-user” features that aren’t visible in the main interface but can be accessed directly from your browser. These are intended for advanced users who want more control or integration.
@@ -233,7 +343,8 @@ In this mode:
 - These features are optional and hidden from the main interface to avoid clutter.  
 - `/upload` and `/export` are intentionally unlinked from the UI to prevent accidental access.  
 - Always verify your Wi-Fi credentials and tokens before uploading edited configurations.
-  
+
+&nbsp;
 ## 🚀 Getting Started
 
 This guide will walk you through setting up your environment and uploading the **ESPTimeCast** project to your **ESP8266** or **ESP32** board. Please follow the instructions carefully for your specific board type.
@@ -291,6 +402,7 @@ Once your Arduino IDE is set up for your board (as described above):
     * Search for and run: `Upload Little FS to Pico/ESP8266/ESP32` (the exact command name might vary).
     * **Important for ESP32:** If the upload fails, you might need to manually put your ESP32 into "Download Mode." While holding down the **Boot button** (often labeled 'BOOT' or 'IO0' or 'IO9'), briefly press and release the **RST button**, then release the Boot button.
 
+&nbsp;
 ## 📺 Display Behavior
 
 **ESPTimeCast** automatically switches between two display modes: Clock and Weather.
@@ -307,7 +419,7 @@ The following table summarizes what will appear on the display in each scenario:
 | **Weather**  | ✅ Yes      | ❌ No          | 🗓️ Day Icon + ⏰ Time (e.g. `@ 14:53`)           |
 | **Weather**  | ❌ No       | ❌ No          |  `! TEMP` (no weather or time data)       |
 
-## How it works:
+#### How it works:
 
 - The display automatically alternates between **Clock** and **Weather** modes (the duration for each is configurable).
 - If "Show Weather Description" is enabled a third mode **Description** will display after the **Weather** display with a duration of 3 seconds.
@@ -323,13 +435,15 @@ The following table summarizes what will appear on the display in each scenario:
 - ❌ **No**: Data not available
 - — : Value does not affect this mode
 
+&nbsp;
 ## Support this project
 
 ESPTimeCast is an open-source passion project designed to blend art, engineering, and information display.
 If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
-[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka) 
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor-fafbfc?logo=github&logoColor=ea4aaa)](https://github.com/sponsors/mfactory-osaka)   
 
 
 
+      
