@@ -28,9 +28,9 @@ MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 AsyncWebServer server(80);
 
 // --- Global Scroll Speed Settings ---
-const int GENERAL_SCROLL_SPEED = 85;  // Default: Adjust this for Weather Description and Countdown Label (e.g., 50 for faster, 200 for slower)
-const int IP_SCROLL_SPEED = 115;      // Default: Adjust this for the IP Address display (slower for readability)
-
+const int GENERAL_SCROLL_SPEED = 85;    // Default: Adjust this for Weather Description and Countdown Label (e.g., 50 for faster, 200 for slower)
+const int IP_SCROLL_SPEED = 115;  // Default: Adjust this for the IP Address display (slower for readability)
+int messageScrollSpeed = 85;          // default fallback
 
 // --- Nightscout setting ---
 const unsigned int NIGHTSCOUT_IDLE_THRESHOLD_MIN = 10;  // minutes before data is considered outdated
@@ -60,6 +60,8 @@ bool showHumidity = false;
 bool colonBlinkEnabled = true;
 char ntpServer1[64] = "pool.ntp.org";
 char ntpServer2[256] = "time.nist.gov";
+char customMessage[121] = "";
+char lastPersistentMessage[128] = "";  
 
 // Dimming
 bool dimmingEnabled = false;
@@ -102,6 +104,8 @@ bool shouldFetchWeatherNow = false;
 unsigned long lastSwitch = 0;
 unsigned long lastColonBlink = 0;
 int displayMode = 0;  // 0: Clock, 1: Weather, 2: Weather Description, 3: Countdown
+int prevDisplayMode = -1;
+bool clockScrollDone = false;
 int currentHumidity = -1;
 bool ntpSyncSuccessful = false;
 
@@ -148,7 +152,11 @@ const unsigned long descriptionScrollPause = 300;  // 300ms pause after scroll
 
 // --- Safe WiFi credential and API getters ---
 const char *getSafeSsid() {
-  return isAPMode ? "********" : ssid;
+  if (isAPMode && strlen(ssid) == 0) {
+    return "";
+  } else {
+    return isAPMode ? "********" : ssid;
+  }
 }
 
 const char *getSafePassword() {
@@ -253,10 +261,12 @@ void loadConfig() {
 
   strlcpy(ssid, doc["ssid"] | "", sizeof(ssid));
   strlcpy(password, doc["password"] | "", sizeof(password));
-  strlcpy(openWeatherApiKey, doc["openWeatherApiKey"] | "", sizeof(openWeatherApiKey));  // Corrected typo here
+  strlcpy(openWeatherApiKey, doc["openWeatherApiKey"] | "", sizeof(openWeatherApiKey));
   strlcpy(openWeatherCity, doc["openWeatherCity"] | "", sizeof(openWeatherCity));
   strlcpy(openWeatherCountry, doc["openWeatherCountry"] | "", sizeof(openWeatherCountry));
   strlcpy(weatherUnits, doc["weatherUnits"] | "metric", sizeof(weatherUnits));
+  strlcpy(customMessage, doc["customMessage"] | "", sizeof(customMessage));
+  strlcpy(lastPersistentMessage, customMessage, sizeof(lastPersistentMessage));
   clockDuration = doc["clockDuration"] | 10000;
   weatherDuration = doc["weatherDuration"] | 5000;
   strlcpy(timeZone, doc["timeZone"] | "Etc/UTC", sizeof(timeZone));
@@ -325,7 +335,6 @@ void loadConfig() {
   }
   Serial.println(F("[CONFIG] Configuration loaded."));
 }
-
 
 
 // -----------------------------------------------------------------------------
@@ -484,6 +493,7 @@ void clearWiFiCredentialsInConfig() {
   Serial.println(F("[SECURITY] Cleared WiFi credentials in config.json."));
 }
 
+
 // -----------------------------------------------------------------------------
 // Time / NTP Functions
 // -----------------------------------------------------------------------------
@@ -520,6 +530,7 @@ void setupTime() {
     ntpStartTime = millis();  // start the failed timer (so retry delay counts from now)
   }
 }
+
 
 // -----------------------------------------------------------------------------
 // Utility
@@ -586,6 +597,8 @@ void printConfigToSerial() {
   Serial.println(countdownLabel);
   Serial.print(F("Dramatic Countdown Display: "));
   Serial.println(isDramaticCountdown ? "Yes" : "No");
+  Serial.print(F("Custom Message: "));
+  Serial.println(customMessage);
   Serial.print(F("Total Runtime: "));
   if (totalUptimeSeconds > 0) {
     Serial.println(formatUptime(totalUptimeSeconds));
@@ -795,6 +808,7 @@ void setupWebServer() {
 
     Serial.println(F("[SAVE] Config verification successful."));
     DynamicJsonDocument okDoc(128);
+    strlcpy(customMessage, doc["customMessage"] | "", sizeof(customMessage));
     okDoc[F("message")] = "Saved successfully. Rebooting...";
     String response;
     serializeJson(okDoc, response);
@@ -1103,6 +1117,110 @@ void setupWebServer() {
 
     Serial.printf("[WEBSERVER] Set Dramatic Countdown to %d\n", isDramaticCountdown);
     request->send(200, "application/json", "{\"ok\":true}");
+  });
+
+  // --- Custom Message Endpoint ---
+  server.on("/set_custom_message", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("message", true)) {
+      String msg = request->getParam("message", true)->value();
+      msg.trim();
+
+      String sourceHeader = request->header("X-Source");
+      bool isFromUI = (sourceHeader == "UI");
+      bool isFromHA = !isFromUI;
+
+      // --- Local speed variable (does not modify global GENERAL_SCROLL_SPEED) ---
+      int localSpeed = GENERAL_SCROLL_SPEED;  // Default for UI messages
+      if (request->hasParam("speed", true)) {
+        localSpeed = constrain(request->getParam("speed", true)->value().toInt(), 10, 200);
+        Serial.printf("[MESSAGE] Custom Message scroll speed set to %d\n", localSpeed);
+      }
+
+      // --- CLEAR MESSAGE ---
+      if (msg.length() == 0) {
+        if (isFromUI) {
+          // Web UI clear: remove everything
+          customMessage[0] = '\0';
+          lastPersistentMessage[0] = '\0';
+          displayMode = 0;
+          Serial.println(F("[MESSAGE] All messages cleared by UI. Returning to normal mode."));
+          request->send(200, "text/plain", "CLEARED (UI)");
+
+          // --- SAVE CLEAR STATE ---
+          saveCustomMessageToConfig("");
+        } else {
+          // HA clear: remove only temporary message
+          customMessage[0] = '\0';
+
+          if (strlen(lastPersistentMessage) > 0) {
+            // Restore the last persistent message
+            strncpy(customMessage, lastPersistentMessage, sizeof(customMessage));
+            messageScrollSpeed = GENERAL_SCROLL_SPEED;  // Use global speed for persistent
+            Serial.printf("[MESSAGE] Temporary HA message cleared. Restored persistent message: '%s' (speed=%d)\n",
+                          customMessage, messageScrollSpeed);
+            request->send(200, "text/plain", "CLEARED (HA temporary, persistent restored)");
+          } else {
+            displayMode = 0;
+            Serial.println(F("[MESSAGE] Temporary HA message cleared. No persistent message to restore."));
+            request->send(200, "text/plain", "CLEARED (HA temporary, no persistent)");
+          }
+        }
+        return;
+      }
+
+      // --- SANITIZE MESSAGE ---
+      msg.toUpperCase();
+      String filtered = "";
+      for (size_t i = 0; i < msg.length(); i++) {
+        char c = msg[i];
+        if ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ' || c == ':' || c == '!' || c == '\'' || c == '-' || c == '.' || c == ',' || c == '_' || c == '+' || c == '%' || c == '/' || c == '?') {
+          filtered += c;
+        }
+      }
+
+      filtered.toCharArray(customMessage, sizeof(customMessage));
+
+      // --- STORE MESSAGE ---
+      if (isFromHA) {
+        // --- Preserve the current persistent message before overwriting ---
+        char prevMessage[sizeof(customMessage)];
+        strlcpy(prevMessage, customMessage, sizeof(prevMessage));
+
+        // --- Overwrite customMessage with new temporary HA message ---
+        filtered.toCharArray(customMessage, sizeof(customMessage));
+        messageScrollSpeed = localSpeed;  // Use HA-specified scroll speed
+
+        // --- If no persistent message stored yet, keep the previous one ---
+        if (strlen(lastPersistentMessage) == 0 && strlen(prevMessage) > 0) {
+          strlcpy(lastPersistentMessage, prevMessage, sizeof(lastPersistentMessage));
+        }
+
+        Serial.printf("[HA] Temporary HA message received: %s (persistent=%s)\n",
+                      customMessage, lastPersistentMessage);
+
+      } else {
+        // --- UI-originated message: permanent ---
+        filtered.toCharArray(customMessage, sizeof(customMessage));
+        strlcpy(lastPersistentMessage, customMessage, sizeof(lastPersistentMessage));
+        messageScrollSpeed = GENERAL_SCROLL_SPEED;  // Always global for UI
+
+        Serial.printf("[UI] Persistent message stored: %s (speed=%d)\n",
+                      customMessage, messageScrollSpeed);
+
+        // --- Persist to config.json immediately ---
+        saveCustomMessageToConfig(customMessage);
+      }
+
+      // --- Activate display ---
+      displayMode = 6;
+      prevDisplayMode = 0;
+
+      String response = String(isFromHA ? "OK (HA message, speed=" : "OK (UI message, speed=") + String(localSpeed) + ")";
+      request->send(200, "text/plain", response);
+    } else {
+      Serial.println(F("[MESSAGE] Error: missing 'message' parameter in request."));
+      request->send(400, "text/plain", "Missing message parameter");
+    }
   });
 
   server.on("/uptime", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -1604,6 +1722,7 @@ void fetchWeather() {
   http.end();
 }
 
+
 void loadUptime() {
   if (LittleFS.exists("/uptime.dat")) {
     File f = LittleFS.open("/uptime.dat", "r");
@@ -1640,6 +1759,41 @@ void saveUptime() {
   }
 }
 
+void saveCustomMessageToConfig(const char *msg) {
+  Serial.println(F("[CONFIG] Updating customMessage in config.json..."));
+
+  DynamicJsonDocument doc(2048);
+
+  // Load existing config.json (if present)
+  File configFile = LittleFS.open("/config.json", "r");
+  if (configFile) {
+    DeserializationError err = deserializeJson(doc, configFile);
+    configFile.close();
+    if (err) {
+      Serial.print(F("[CONFIG] Error reading existing config: "));
+      Serial.println(err.f_str());
+    }
+  }
+
+  // Update only customMessage
+  doc["customMessage"] = msg;
+
+  // Safely write back to config.json
+  if (LittleFS.exists("/config.json")) {
+    LittleFS.rename("/config.json", "/config.bak");
+  }
+
+  File f = LittleFS.open("/config.json", "w");
+  if (!f) {
+    Serial.println(F("[CONFIG] ERROR: Failed to open /config.json for writing"));
+    return;
+  }
+
+  size_t bytesWritten = serializeJson(doc, f);
+  f.close();
+  Serial.printf("[CONFIG] Saved customMessage='%s' (%u bytes written)\n", msg, bytesWritten);
+}
+
 // Returns formatted uptime (for web UI or logs)
 String formatUptime(unsigned long seconds) {
   unsigned long days = seconds / 86400;
@@ -1656,7 +1810,6 @@ String formatUptime(unsigned long seconds) {
 }
 
 
-
 // -----------------------------------------------------------------------------
 // Main setup() and loop()
 // -----------------------------------------------------------------------------
@@ -1667,8 +1820,9 @@ DisplayMode key:
   2: Weather Description
   3: Countdown
   4: Nightscout
+  5: Date
+  6: Custom Message
 */
-
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -1719,7 +1873,9 @@ void setup() {
   saveUptime();
 }
 
+
 void advanceDisplayMode() {
+  prevDisplayMode = displayMode;
   int oldMode = displayMode;
   String ntpField = String(ntpServer2);
   bool nightscoutConfigured = ntpField.startsWith("https://");
@@ -1788,18 +1944,26 @@ void advanceDisplayMode() {
       displayMode = 0;
       Serial.println(F("[DISPLAY] Switching to display mode: CLOCK (from Countdown)"));
     }
-  } else if (displayMode == 4) {  // Nightscout -> Clock
+  } else if (displayMode == 4) {  // Nightscout -> Custom Message
+    displayMode = 6;
+    Serial.println(F("[DISPLAY] Switching to display mode: CUSTOM MESSAGE (from Nightscout)"));
+  } else if (displayMode == 6) {  // Custom Message -> Clock
     displayMode = 0;
-    Serial.println(F("[DISPLAY] Switching to display mode: CLOCK (from Nightscout)"));
+    Serial.println(F("[DISPLAY] Switching to display mode: CLOCK (from Custom Message)"));
   }
 
   // --- Common cleanup/reset logic remains the same ---
+  if ((displayMode == 0) && strlen(customMessage) > 0 && oldMode != 6) {
+    displayMode = 6;
+    Serial.println(F("[DISPLAY] Custom Message display before returning to CLOCK"));
+  }
   lastSwitch = millis();
 }
 
+
 void advanceDisplayModeSafe() {
   int attempts = 0;
-  const int MAX_ATTEMPTS = 6;  // Number of possible modes + 1
+  const int MAX_ATTEMPTS = 7;  // Number of possible modes + 1
   int startMode = displayMode;
   bool valid = false;
   do {
@@ -1816,6 +1980,7 @@ void advanceDisplayModeSafe() {
     else if (displayMode == 2 && showWeatherDescription && weatherAvailable && weatherDescription.length() > 0) valid = true;
     else if (displayMode == 3 && countdownEnabled && !countdownFinished && ntpSyncSuccessful) valid = true;
     else if (displayMode == 4 && nightscoutConfigured) valid = true;
+    else if (displayMode == 6 && strlen(customMessage) > 0) valid = true;
 
     // If we've looped back to where we started, break to avoid infinite loop
     if (displayMode == startMode) break;
@@ -1830,6 +1995,7 @@ void advanceDisplayModeSafe() {
   }
   lastSwitch = millis();
 }
+
 
 //config save after countdown finishes
 bool saveCountdownConfig(bool enabled, time_t targetTimestamp, const String &label) {
@@ -1892,7 +2058,6 @@ void loop() {
 
   static unsigned long lastFetch = 0;
   const unsigned long fetchInterval = 300000;  // 5 minutes
-
 
 
   // AP Mode animation
@@ -2086,13 +2251,11 @@ void loop() {
   }
 
 
-
   // Only advance mode by timer for clock/weather, not description!
   unsigned long displayDuration = (displayMode == 0) ? clockDuration : weatherDuration;
   if ((displayMode == 0 || displayMode == 1) && millis() - lastSwitch > displayDuration) {
     advanceDisplayMode();
   }
-
 
 
   // --- MODIFIED WEATHER FETCHING LOGIC ---
@@ -2115,7 +2278,6 @@ void loop() {
     weatherFetchInitiated = false;
     shouldFetchWeatherNow = false;
   }
-
 
 
   const char *const *daysOfTheWeek = getDaysOfWeek(language);
@@ -2174,9 +2336,6 @@ void loop() {
     advanceDisplayMode();
   }
 
-  // Persistent variables (declare near top of file or loop)
-  static int prevDisplayMode = -1;
-  static bool clockScrollDone = false;
 
   // --- CLOCK Display Mode ---
   if (displayMode == 0) {
@@ -2226,6 +2385,8 @@ void loop() {
         shouldScrollIn = true;  // first boot or other special modes
       } else if (prevDisplayMode == 2 && weatherDescription.length() > 8) {
         shouldScrollIn = true;  // only scroll in if weather was scrolling
+      } else if (prevDisplayMode == 6) {
+        shouldScrollIn = true;  // scroll in when coming from custom message
       }
 
       if (shouldScrollIn && !clockScrollDone) {
@@ -2253,9 +2414,6 @@ void loop() {
       clockScrollDone = false;  // reset for next time we enter clock
     }
   }
-
-  // --- update prevDisplayMode ---
-  prevDisplayMode = displayMode;
 
 
   // --- WEATHER Display Mode ---
@@ -2296,6 +2454,18 @@ void loop() {
   // --- WEATHER DESCRIPTION Display Mode ---
   if (displayMode == 2 && showWeatherDescription && weatherAvailable && weatherDescription.length() > 0) {
     String desc = weatherDescription;
+
+    // --- Check if humidity is actually visible ---
+    bool humidityVisible = showHumidity && weatherAvailable && strlen(openWeatherApiKey) == 32 && strlen(openWeatherCity) > 0 && strlen(openWeatherCountry) > 0;
+
+    // --- Conditional padding ---
+    bool addPadding = false;
+    if (prevDisplayMode == 1 && humidityVisible) {
+      addPadding = true;
+    }
+    if (addPadding) {
+      desc = "    " + desc;  // 4-space padding before scrolling
+    }
 
     // prepare safe buffer
     static char descBuffer[128];  // large enough for OWM translations
@@ -2609,10 +2779,17 @@ void loop() {
         }
 
         String fullString = String(buf);
+        bool addPadding = false;
+        bool humidityVisible = showHumidity && weatherAvailable && strlen(openWeatherApiKey) == 32 && strlen(openWeatherCity) > 0 && strlen(openWeatherCountry) > 0;
 
-        // --- Add a leading space only if showDayOfWeek is true ---
-        if (showDayOfWeek) {
-          fullString = " " + fullString;
+        // Padding logic
+        if (prevDisplayMode == 0 && (showDayOfWeek || colonBlinkEnabled)) {
+          addPadding = true;
+        } else if (prevDisplayMode == 1 && humidityVisible) {
+          addPadding = true;
+        }
+        if (addPadding) {
+          fullString = "    " + fullString;  // 4 spaces
         }
 
         // Display the full string and scroll it
@@ -2888,6 +3065,53 @@ void loop() {
     if (millis() - lastSwitch > weatherDuration) {
       advanceDisplayMode();
     }
+  }
+
+
+  // --- Custom Message Display Mode (displayMode == 6) ---
+  if (displayMode == 6) {
+    if (strlen(customMessage) == 0) {
+      advanceDisplayMode();
+      yield();
+      return;
+    }
+
+    String msg = String(customMessage);
+
+    // Replace standard digits 0–9 with your custom font character codes
+    for (int i = 0; i < msg.length(); i++) {
+      if (isDigit(msg[i])) {
+        int num = msg[i] - '0';           // 0–9
+        msg[i] = 145 + ((num + 9) % 10);  // Maps 0→154, 1→145, ... 9→153
+      }
+    }
+
+    // --- Determine if we need left padding based on previous mode ---
+    bool addPadding = false;
+    bool humidityVisible = showHumidity && weatherAvailable && strlen(openWeatherApiKey) == 32 && strlen(openWeatherCity) > 0 && strlen(openWeatherCountry) > 0;
+
+    // If coming from CLOCK mode
+    if (prevDisplayMode == 0 && (showDayOfWeek || colonBlinkEnabled)) {
+      addPadding = true;
+    } else if (prevDisplayMode == 1 && humidityVisible) {
+      addPadding = true;
+    }
+    // Apply padding (4 spaces) if needed
+    if (addPadding) {
+      msg = "    " + msg;
+    }
+
+    // --- Display scrolling message ---
+    P.setTextAlignment(PA_LEFT);
+    P.setCharSpacing(1);
+    textEffect_t actualScrollDirection = getEffectiveScrollDirection(PA_SCROLL_LEFT, flipDisplay);
+    extern int messageScrollSpeed;  // declare globally once at the top of your sketch
+    P.displayScroll(msg.c_str(), PA_LEFT, actualScrollDirection, messageScrollSpeed);
+    while (!P.displayAnimate()) yield();
+    P.setTextAlignment(PA_CENTER);
+    advanceDisplayMode();
+    yield();
+    return;
   }
 
   unsigned long currentMillis = millis();
