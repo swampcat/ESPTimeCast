@@ -47,13 +47,13 @@ ESPTimeCast has been featured on:
 - **Simple Web Interface** for all configuration (WiFi, weather, time zone, display durations, and more)
 - **Automatic NTP Sync** with robust status feedback and retries
 - **Weather Fetching** from OpenWeatherMap (every 5 minutes, temp/humidity/description)
-- **Custom Scroll Messages** - fully persistent until manually cleared via the Web UI.
+- **Custom Scroll Messages** - fully persistent until manually cleared via the Web UI
 - **Fallback AP Mode** for easy first-time setup or configuration
 - **Timezone Selection** from IANA names (DST integrated on backend)
-- **Get My Location** button to get your approximate Lat/Long.
+- **Get My Location** button to get your approximate Lat/Long
 - **Week Day and Weather Description display** in multiple languages
 - **Persistent Config** stored in LittleFS, with backup/restore system
-- **Status Animations** for WiFi connection, AP mode, time syncing.
+- **Status Animations** for WiFi connection, AP mode, time syncing
 - **Advanced Settings** panel with:
   - Custom **Primary/Secondary NTP server** input
   - Display **Day of the Week** toggle (default is on)
@@ -67,7 +67,8 @@ ESPTimeCast has been featured on:
   - Adjustable display **brightness**
   - **Scheduled** Dimming Hours
   - **Countdown** function (Scroll / Dramatic)
-  - Optinal: ESPTimeCast supports displaying glucose data from **Nightscout** servers every 5 minutes, alternating with weather information.
+  - **Optional:** ESPTimeCast supports displaying glucose data from **Nightscout** servers every 5 minutes, alternating with weather information
+  - **Optional:** Export and Upload settings via `device-ip/export` and `device-ip/upload` endpoints
 
 &nbsp;
 ## 🪛 Wiring - OCT 17 - Important Hardware Update ⚠️ ⚠️ ⚠️
@@ -458,6 +459,7 @@ If you enjoy this project, please consider supporting my work:
 
 
       
+
 
 
 
