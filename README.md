@@ -16,9 +16,9 @@ It combines real-time NTP time sync, live OpenWeatherMap updates, and a modern w
 &nbsp;
 ## 📦 3D Printable Case
 
-Want to give your ESPTimeCast a home? You can 3D print a custom case for it!  
-A stylish version (V2) of the case has just been released!   
-The case front panel (3mm) can be laser-cut!
+To help support the project’s development, the official **ESPTimeCast** case design is available as a **paid STL download** (see links below).  
+
+If you prefer a free option, there are many compatible **MAX7219 LED matrix enclosures** shared by the community — you can find plenty by searching for “MAX7219 case” on Printables, Cults3D, or similar sites.
 
 <img src="assets/image01.png" alt="3D Printable Case V1" width="640" />
 <img src="assets/image02.png" alt="3D Printable Case V2" width="640" />
@@ -459,6 +459,7 @@ If you enjoy this project, please consider supporting my work:
 
 
       
+
 
 
 
