@@ -18,18 +18,18 @@ It combines real-time NTP time sync, live OpenWeatherMap updates, and a modern w
 
 Want to give your ESPTimeCast a home? You can 3D print a custom case for it!  
 A stylish version (V2) of the case has just been released!   
-The case front panel (3mm) can be laser cut!
+The case front panel (3mm) can be laser-cut!
 
 <img src="assets/image01.png" alt="3D Printable Case V1" width="640" />
 <img src="assets/image02.png" alt="3D Printable Case V2" width="640" />
 
 <p align="left">
   <a href="https://www.printables.com/model/1344276-esptimecast-wi-fi-clock-weather-display">
-    <img src="https://img.shields.io/badge/Printables-263%20Downloads-orange?logo=prusa" width="210">
+    <img src="https://img.shields.io/badge/Printables-266%20Downloads-orange?logo=prusa" width="210">
   </a>
   <br>
   <a href="https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219">
-    <img src="https://img.shields.io/badge/Cults3D-99%20Downloads-blue?logo=cults3d" width="180">
+    <img src="https://img.shields.io/badge/Cults3D-101%20Downloads-blue?logo=cults3d" width="180">
   </a>
 </p>
 
@@ -113,7 +113,7 @@ This change improves **brightness**, **stability**, and protects the **onboard v
 
 #### 🧩 Board → MAX7219 
 
-| D1 Mini (Micro USB) | D1 Mini (USB C) | D1 Mini (ESP 32) | S2 Mini | MAX 7219 |
+| D1 Mini (Micro USB) | D1 Mini (USB C) | D1 Mini (ESP 32) | S2 Mini | MAX7219 |
 |:-----:|:-----:|:-----:|:-----:|:------|
 |  GND  |  GND  |  GND  |  GND  |  GND  |
 |  5V   |  5V/VBUS   |  5V/VBUS   |  5V/VBUS   |  VCC  | 
@@ -151,7 +151,7 @@ The built-in web interface provides full configuration for:
 4. The device shows its local IP address after boot so you can login again for setting changes
 
 > External links and the "Get My Location" button require internet access.  
-They won't work while the device is in AP Mode - connect to Wi-Fi first.
+They won't work while the device is in AP Mode - connect to WiFi first.
 
 &nbsp;
 ## UI Example:
@@ -160,7 +160,7 @@ They won't work while the device is in AP Mode - connect to Wi-Fi first.
 &nbsp;
 ## ⚙️ Advanced Settings
 
-Click the **cog icon** next to “Advanced Settings” in the web UI to reveal extra configuration options.  
+Click the **cog icon** next to “Advanced Settings” in the Web UI to reveal extra configuration options.  
 
 **Available advanced settings:**
 
@@ -172,7 +172,7 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 - **24/12h Clock**: Switch between 24-hour and 12-hour time formats (24-hour default)
 - **Imperial Units (°F)** toggle (metric °C defaults)
 - **Humidity**: Display Humidity besides Temperature
-- **Weather description** toggle (display weather description in the selected language* for 3 seconds or scrolls once if description is too long)
+- **Weather description** toggle (display weather description in the selected language for 3 seconds or scrolls once if description is too long)
 - **Flip Display**: Invert the display vertically/horizontally
 - **Brightness**: Off - 0 (dim) to 15 (bright)
 - **Dimming Feature**: Start time, end time and desired brightness selection
@@ -319,7 +319,7 @@ This is useful for creating backups or migrating settings between devices.
 ```
 http://your-device-ip/export
 ```
-The file will download automatically with your saved Wi-Fi credentials (safely masked for security) and all other settings.
+The file will download automatically with your saved WiFi credentials (safely masked for security) and all other settings.
 
 #### 📂 `/upload`
 Lets you manually upload a configuration file (`config.json`) to the device.  
@@ -354,7 +354,7 @@ In this mode:
 #### ⚠️ Notes
 - These features are optional and hidden from the main interface to avoid clutter.  
 - `/upload` and `/export` are intentionally unlinked from the UI to prevent accidental access.  
-- Always verify your Wi-Fi credentials and tokens before uploading edited configurations.
+- Always verify your WiFi credentials and tokens before uploading edited configurations.
 
 &nbsp;
 ## 🚀 Getting Started
@@ -402,23 +402,23 @@ Follow these steps to prepare your Arduino IDE for ESP32 development:
 Once your Arduino IDE is set up for your board (as described above):
 
 1.  **Open the Project Folder:**
-    * For ESP8266: Navigate to and open the `ESPTimceCast_ESP8266` project folder. Inside, you'll find the main sketch file, typically named `ESPTimceCast_ESP8266.ino`. Open this `.ino` file in the Arduino IDE.
-    * For ESP32: Navigate to and open the `ESPTimceCast_ESP32` project folder. Inside, you'll find the main sketch file, typically named `ESPTimceCast_ESP32.ino`. Open this `.ino` file in the Arduino IDE.
+    * For ESP8266: Navigate to and open the `ESPTimeCast_ESP8266` project folder. Inside, you'll find the main sketch file, typically named `ESPTimeCast_ESP8266.ino`. Open this `.ino` file in the Arduino IDE.
+    * For ESP32: Navigate to and open the `ESPTimeCast_ESP32` project folder. Inside, you'll find the main sketch file, typically named `ESPTimeCast_ESP32.ino`. Open this `.ino` file in the Arduino IDE.
 2. **Upload the Sketch:**
-    * With the main sketch file open, click the "Upload" button (the right arrow icon) in the Arduino IDE toolbar. This will compile the entire project and upload it to your board.
+    * With the main sketch file open, click the "Upload" button (the right arrow icon) in the Arduino IDE toolbar. This will compile the sketch and upload it to your board..
 3.  **Upload `/data` folder (LittleFS):**
     * This project uses LittleFS for storing web interface files and other assets. You'll need the LittleFS Uploader plugin.
     * [**Install the LittleFS Uploader Plugin**](https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/) 
     * **Before uploading, ensure the Serial Monitor is closed.**
     * Open the Command Palette (`Ctrl+Shift+P` on Windows, `Cmd+Shift+P` on macOS).
-    * Search for and run: `Upload Little FS to Pico/ESP8266/ESP32` (the exact command name might vary).
+    * Search for and run: `Upload LittleFS to Pico/ESP8266/ESP32` (the exact command name might vary).
     * **Important for ESP32:** If the upload fails, you might need to manually put your ESP32 into "Download Mode." While holding down the **Boot button** (often labeled 'BOOT' or 'IO0' or 'IO9'), briefly press and release the **RST button**, then release the Boot button.
 
 &nbsp;
 ## 📺 Display Behavior
 
 **ESPTimeCast** automatically switches between two display modes: Clock and Weather.
-If "Show Weather Description" is enabled a third mode (Description) will display with a duration of 3 seconds, if the description is too long to fit on the display the description will scroll from right to left once.
+If "Show Weather Description" is enabled, a third mode (Description) will display with a duration of 3 seconds, if the description is too long to fit on the display the description will scroll from right to left once.
 
 What you see on the LED matrix depends on whether the device has successfully fetched the current time (via NTP) and weather (via OpenWeatherMap).  
 The following table summarizes what will appear on the display in each scenario:
@@ -450,7 +450,7 @@ The following table summarizes what will appear on the display in each scenario:
 &nbsp;
 ## Support this project
 
-ESPTimeCast is an open-source passion project designed to blend art, engineering, and information display.
+ESPTimeCast is an open-source passion project that blends art, engineering, and information display.
 If you enjoy this project, please consider supporting my work:
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://www.paypal.me/officialuphoto)
@@ -459,6 +459,7 @@ If you enjoy this project, please consider supporting my work:
 
 
       
+
 
 
 
